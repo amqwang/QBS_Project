@@ -5,7 +5,87 @@ date: "2024-07-25"
 ---
 
 ```{r}
-#new file for project
+#importing the csv files
+
+getwd()
+
+datafiles <- list.files(path = "/Users/amyw/Documents/QBS103", pattern = ".csv")
+print(datafiles)
+
+setwd("/Users/amyw/Documents/QBS103")
+
+for (file in datafiles){
+  the_file <- read.csv(file)
+  print(head(the_file))
+}
+
+```
+```{r} 
+#creating new dataframes#
+
+setwd("/Users/amyw/Documents/QBS103")
+
+gene_df <- read.csv('QBS103_GSE157103_genes.csv', header = TRUE)
+meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE)
+
+print(gene_df)
+print(meta_df)
 ```
 
-this is my update
+```{r}
+#creating a df of gene_df with the gene name as the column headers#
+#making the column AAGAB numeric
+
+working_genes <- as.data.frame(t(gene_df))
+names(working_genes) <- working_genes[1,] #copying name of the genes and making a new list
+working_genes <- working_genes[-1,] #removing the list of genes from the dataframe
+print(head(working_genes))
+
+ 
+working_genes$AAGAB <- as.numeric(working_genes$AAGAB) #values were all characters, changing them to numerics
+
+#new_genes_as_numerics <- as.numeric(working_genes)
+
+#print(working_genes$AAGAB)
+#new_gene_df <- working_genes$V15
+#(new_gene_df)
+
+#new_gene_df <- as.numeric(working_genes$AAGAB)
+
+```
+
+
+
+```{r}
+#plotting histogram of AAGAB
+
+ggplot(working_genes, aes(x=AAGAB))+
+  geom_histogram(binwidth = 5, boundary = 0)+
+  labs(title = 'Distribution of AAGAB', x = 'Expression of AAGAB', y = 'Frequency')+
+  theme(plot.title = element_text(hjust=0.5))
+```
+
+
+
+```{r}
+#binding the data NOT MERGING
+
+print(head(working_genes))
+print(head(meta_df))
+
+new_comp <- dplyr::bind_cols(working_genes, meta_df)
+print(head(new_comp))
+
+```
+
+```{r}
+#plotting scatter plot
+
+ggplot(new_comp, aes(x= age, y=AAGAB))+
+  geom_point()+
+  labs(title = 'Distribution of gene AAGAB compared to age', x = 'Age (years)', y = 'Expression of AAGAB')+
+  theme(plot.title = element_text(hjust=0.5))+
+  scale_x_discrete(breaks=seq(0,100,10))
+```
+
+
