@@ -8,8 +8,6 @@ date: "2024-07-25"
 #importing the csv files
 library(tidyverse)
 
-getwd()
-
 datafiles <- list.files(path = "/Users/amyw/Documents/QBS103", pattern = ".csv")
 print(datafiles)
 
@@ -22,7 +20,7 @@ for (file in datafiles){
 
 ```
 ```{r} 
-#creating new dataframes#
+#creating new dataframes
 
 setwd("/Users/amyw/Documents/QBS103")
 
@@ -42,29 +40,19 @@ names(working_genes) <- working_genes[1,] #copying name of the genes and making 
 working_genes <- working_genes[-1,] #removing the list of genes from the dataframe
 print(head(working_genes))
 
- 
 working_genes$AAGAB <- as.numeric(working_genes$AAGAB) #values were all characters, changing them to numerics
 
-#new_genes_as_numerics <- as.numeric(working_genes)
-
-#print(working_genes$AAGAB)
-#new_gene_df <- working_genes$V15
-#(new_gene_df)
-
-#new_gene_df <- as.numeric(working_genes$AAGAB)
-
 ```
-
 
 
 ```{r}
 #plotting histogram of AAGAB
 
 ggplot(working_genes, aes(x=AAGAB))+
-  geom_histogram(binwidth = 5, boundary = 0)+
+  geom_histogram(binwidth = 5, boundary = 0)+ #boundary at 0 to group data
   labs(title = 'Distribution of AAGAB', x = 'Expression of AAGAB', y = 'Frequency')+
   theme_light()+
-  theme(plot.title = element_text(hjust=0.5))
+  theme(plot.title = element_text(hjust=0.5)) #centering title
 ```
 
 
@@ -88,7 +76,7 @@ new_comp$AAGAB<- as.numeric(new_comp$AAGAB)
 
 ggplot(new_comp, aes(x= age, y=AAGAB))+
   geom_point()+
-  labs(title = 'Distribution of gene AAGAB compared to age', x = 'Age (years)', y = 'Expression of AAGAB')+
+  labs(title = 'Age compared to distribution of gene AAGAB', x = 'Age (years)', y = 'Expression of AAGAB')+
   scale_x_continuous(breaks=seq(0,100,by=10))+
   theme_light()+
   theme(plot.title = element_text(hjust=0.5))
@@ -99,15 +87,20 @@ ggplot(new_comp, aes(x= age, y=AAGAB))+
 
 ```{r}
 print(head(new_comp))
-box_first <- dplyr::select(new_comp,AAGAB, sex, mechanical_ventilation)
+box_first <- dplyr::select(new_comp,AAGAB, sex, mechanical_ventilation) #selecting data columns for easier viewing
 print(box_first)
 
-box_long <- box_first %>%
+box_long <- box_first %>% #pivoting long to prep for boxplot
   tidyr::pivot_longer(cols= c(sex, mechanical_ventilation), names_to = 'categorical', values_to = 'Sex/MechVent')
-
 head(box_long)
 
-ggplot(box_first, aes (mechanical_ventilation, AAGAB, fill = sex))+
-  geom_boxplot()
+ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
+  geom_boxplot()+
+  theme_light()+
+  labs(title = 'Distribution of AAGAB Based on Sex Coloured by Mechanical Ventilation', x = 'Sex', y = 'Expression of AAGAB')+
+  theme(plot.title = element_text(hjust=0))+
+  scale_fill_discrete(name = 'Mechanical Ventilation Status')+
+  scale_x_discrete(labels = c('Female', 'Male', 'Unknown'))
+
 ```
 
