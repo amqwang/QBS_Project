@@ -8,10 +8,10 @@ date: "2024-07-25"
 #importing the csv files
 library(tidyverse)
 
-datafiles <- list.files(path = "/Users/amyw/Documents/QBS103", pattern = ".csv")
+datafiles <- list.files(path = "/Users/amyw/Documents/QBS103/DSProject", pattern = ".csv")
 print(datafiles)
 
-setwd("/Users/amyw/Documents/QBS103")
+setwd("/Users/amyw/Documents/QBS103/DSProject")
 
 for (file in datafiles){
   the_file <- read.csv(file)
@@ -22,31 +22,20 @@ for (file in datafiles){
 ```{r} 
 #creating new dataframes
 
-setwd("/Users/amyw/Documents/QBS103")
+setwd("/Users/amyw/Documents/QBS103/DSProject")
 
-gene_df <- read.csv('QBS103_GSE157103_genes.csv', header = TRUE)
-meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE)
+gene_df <- read.csv('QBS103_GSE157103_genes.csv', header = TRUE,row.names = 1)
+meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE, row.names = 1)
 
 print(gene_df)
 print(meta_df)
-```
-
-```{r}
-#creating a df of gene_df with the gene name as the column headers#
-#making the column AAGAB numeric
-
-working_genes <- as.data.frame(t(gene_df))
-names(working_genes) <- working_genes[1,] #copying name of the genes and making a new list
-working_genes <- working_genes[-1,] #removing the list of genes from the dataframe
-print(head(working_genes))
-
-working_genes$AAGAB <- as.numeric(working_genes$AAGAB) #values were all characters, changing them to numerics
 
 ```
-
 
 ```{r}
 #plotting histogram of AAGAB
+working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
+print(head(working_genes))
 
 ggplot(working_genes, aes(x=AAGAB))+
   geom_histogram(binwidth = 5, boundary = 0)+ #boundary at 0 to group data
@@ -56,28 +45,27 @@ ggplot(working_genes, aes(x=AAGAB))+
 ```
 
 
-
 ```{r}
-#binding the data NOT MERGING
+#merging the data into new dataframe called 'new_comp'
 
 print(head(working_genes))
 print(head(meta_df))
 
-new_comp <- dplyr::bind_cols(working_genes, meta_df)
-print(head(new_comp))
 
+new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
+final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
+print(head(final_comp))
 ```
 
 ```{r}
 #plotting scatter plot
 
-new_comp$age<- as.numeric(new_comp$age)
-new_comp$AAGAB<- as.numeric(new_comp$AAGAB)
+final_comp$age<- as.numeric(final_comp$age)
 
-ggplot(new_comp, aes(x= age, y=AAGAB))+
-  geom_point()+
+ggplot(final_comp, aes(x= age, y=AAGAB))+
+  geom_point()+ #two age unknowns from the data
   labs(title = 'Age compared to distribution of gene AAGAB', x = 'Age (years)', y = 'Expression of AAGAB')+
-  scale_x_continuous(breaks=seq(0,100,by=10))+
+  scale_x_continuous(breaks=seq(0,150,by=10))+
   theme_light()+
   theme(plot.title = element_text(hjust=0.5))
 
@@ -86,7 +74,7 @@ ggplot(new_comp, aes(x= age, y=AAGAB))+
 ```
 
 ```{r}
-print(head(new_comp))
+print(head(final_comp))
 box_first <- dplyr::select(new_comp,AAGAB, sex, mechanical_ventilation) #selecting data columns for easier viewing
 print(box_first)
 
@@ -102,5 +90,8 @@ ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
   scale_fill_discrete(name = 'Mechanical Ventilation Status')+
   scale_x_discrete(labels = c('Female', 'Male', 'Unknown'))
 
+
+final_df <- as.data.frame(t(final_comp))
+print(head(final_df)) #reformatting dataframe back to industry standard of having participant ID as the column names
 ```
 
