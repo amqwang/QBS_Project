@@ -15,7 +15,7 @@ setwd("/Users/amyw/Documents/QBS103/DSProject")
 
 for (file in datafiles){
   the_file <- read.csv(file)
-  print(head(the_file))
+  #print(head(the_file)) #commented out for ease of marking
 }
 
 ```
@@ -27,15 +27,15 @@ setwd("/Users/amyw/Documents/QBS103/DSProject")
 gene_df <- read.csv('QBS103_GSE157103_genes.csv', header = TRUE,row.names = 1)
 meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE, row.names = 1)
 
-print(gene_df)
-print(meta_df)
+#print(head(gene_df)) #for ease of marking
+#print(head(meta_df))
 
 ```
 
 ```{r}
 #plotting histogram of AAGAB
 working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
-print(head(working_genes))
+#print(head(working_genes))
 
 ggplot(working_genes, aes(x=AAGAB))+
   geom_histogram(binwidth = 5, boundary = 0)+ #boundary at 0 to group data
@@ -46,25 +46,25 @@ ggplot(working_genes, aes(x=AAGAB))+
 
 
 ```{r}
-#merging the data into new dataframe called 'new_comp'
+#merging the data into new dataframe called 'new_comp' and reformatting to 'final_comp'
 
-print(head(working_genes))
-print(head(meta_df))
-
+#print(head(working_genes))
+#print(head(meta_df))
 
 new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
 final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
-print(head(final_comp))
+#print(head(final_comp))
 ```
 
 ```{r}
 #plotting scatter plot
 
-final_comp$age<- as.numeric(final_comp$age)
+final_comp$age<- as.numeric(final_comp$age) #converting the age column from characters to numerics
 
 ggplot(final_comp, aes(x= age, y=AAGAB))+
   geom_point()+ #two age unknowns from the data
-  labs(title = 'Age compared to distribution of gene AAGAB', x = 'Age (years)', y = 'Expression of AAGAB')+
+  labs(title = 'Age compared to distribution of gene AAGAB', 
+       x = 'Age (years)', y = 'Expression of AAGAB')+
   scale_x_continuous(breaks=seq(0,150,by=10))+
   theme_light()+
   theme(plot.title = element_text(hjust=0.5))
@@ -74,24 +74,27 @@ ggplot(final_comp, aes(x= age, y=AAGAB))+
 ```
 
 ```{r}
-print(head(final_comp))
-box_first <- dplyr::select(new_comp,AAGAB, sex, mechanical_ventilation) #selecting data columns for easier viewing
-print(box_first)
+#print(head(final_comp))
+box_first <- dplyr::select(final_comp,AAGAB, sex, mechanical_ventilation) #selecting data columns for easier viewing
+#print(box_first)
 
 box_long <- box_first %>% #pivoting long to prep for boxplot
-  tidyr::pivot_longer(cols= c(sex, mechanical_ventilation), names_to = 'categorical', values_to = 'Sex/MechVent')
-head(box_long)
+  tidyr::pivot_longer(cols= c(sex, mechanical_ventilation), 
+                      names_to = 'categorical', values_to = 'Sex/MechVent')
+#head(box_long)
 
 ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
   geom_boxplot()+
   theme_light()+
-  labs(title = 'Distribution of AAGAB Based on Sex Coloured by Mechanical Ventilation', x = 'Sex', y = 'Expression of AAGAB')+
+  labs(title = 'Distribution of AAGAB Based on Sex Coloured by Mechanical Ventilation', 
+       x = 'Sex', y = 'Expression of AAGAB')+
   theme(plot.title = element_text(hjust=0))+
   scale_fill_discrete(name = 'Mechanical Ventilation Status')+
   scale_x_discrete(labels = c('Female', 'Male', 'Unknown'))
 
 
 final_df <- as.data.frame(t(final_comp))
-print(head(final_df)) #reformatting dataframe back to industry standard of having participant ID as the column names
+#print(head(final_df)) 
+#reformatting dataframe back to industry standard of having participant ID as the column names
 ```
 
