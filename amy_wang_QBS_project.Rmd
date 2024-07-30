@@ -18,6 +18,10 @@ for (file in datafiles){
   #print(head(the_file)) #commented out for ease of marking
 }
 
+#gene: AAGAB
+#continuous variate: age
+#categorical covariates: sex, mechanical ventilation
+
 ```
 ```{r} 
 #creating new dataframes
