@@ -31,7 +31,7 @@ setwd("/Users/amyw/Documents/QBS103/DSProject")
 gene_df <- read.csv('QBS103_GSE157103_genes.csv', header = TRUE,row.names = 1)
 meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE, row.names = 1)
 
-#print(head(gene_df)) #for ease of marking
+print(head(gene_df)) #for ease of marking
 #print(head(meta_df))
 
 ```
@@ -39,7 +39,7 @@ meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE, row.nam
 ```{r}
 #plotting histogram of AAGAB
 working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
-#print(head(working_genes))
+print(head(working_genes))
 
 ggplot(working_genes, aes(x=AAGAB))+
   geom_histogram(binwidth = 5, boundary = 0)+ #boundary at 0 to group data
@@ -100,5 +100,40 @@ ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
 final_df <- as.data.frame(t(final_comp))
 #print(head(final_df)) 
 #reformatting dataframe back to industry standard of having participant ID as the column names
+```
+```{r}
+#function for creating histogram
+histo_func <- function(frame_of_data, gene_names) {
+  for (i in 1:length(gene_names)) {
+    ggplot(frame_of_data, aes(x = gene_names[i])) +
+      geom_histogram()+#binwidth = 5, boundary = 0) +
+      labs(title = 'Distribution of {gene_names}', x = 'Expression of Gene', y = 'Frequency') +
+      theme_light() +
+      theme(plot.title = element_text(hjust=0.5))
+  }
+}
+
+histo_func(working_genes, list(working_genes$A1BG, working_genes$AASS))
+```
+
+```{r}
+#function for creating scatterplot
+
+scatter_func <- function(frame_of_data, continous_var, gene_name) {
+  ggplot(frame_of_data, aes(x= continous_var, y=gene_name))+
+    geom_point()+ #two age unknowns from the data
+    labs(title = 'Age compared to distribution of gene', 
+       x = '{continuous_var}', y = '{gene_name}')+
+    scale_x_discrete()+
+    theme_light()+
+    theme(plot.title = element_text(hjust=0.5))
+}
+
+scatter_func (final_comp, final_comp$crp.mg.l, final_comp$A1BG)
+```
+
+```{r}
+#function for creating boxplots
+
 ```
 
