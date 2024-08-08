@@ -21,18 +21,15 @@ setwd("/Users/amyw/Documents/QBS103/DSProject")
 for (file in datafiles){
   the_file <- read.csv(file)}
 
-
-setwd("/Users/amyw/Documents/QBS103/DSProject")
-
 gene_df <- read.csv('QBS103_GSE157103_genes.csv', header = TRUE,row.names = 1)
 meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE, row.names = 1)
 
 working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
-print(head(working_genes))
+#print(head(working_genes))
 
 new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
 final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
-print(head(final_comp))
+#print(head(final_comp))
 ```
 
 
@@ -100,7 +97,9 @@ plotGenerator <- function(myDataFrame, geneNameList, contCovar, catCovar1, catCo
       #https://stackoverflow.com/questions/6386314/how-do-i-get-discrete-factor-levels-to-be-treated-as-continuous
       #needed to convert discrete variable to continuous
       geom_point()+ 
-      labs(title = paste(str_to_title(contVarColumnName), 'compared to distribution of gene', geneColumnName),
+      labs(title = paste(str_to_title(contVarColumnName), 
+                         'compared to distribution of gene', 
+                         geneColumnName),
            x = str_to_title(contVarColumnName), 
            y = paste('Expression of', str_to_title(contVarColumnName)))+
       #str_to_title to capitalize the first letter of the input
