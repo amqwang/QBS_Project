@@ -5,52 +5,56 @@ date: "2024-08-07"
 ---
 
 ```{r}
-plotGenerator <- function(myDataFrame, geneNameList, contCovar, catCovar1, catCovar2)
-{
-  myDataFrame = as.data.frame(myDataFrame)
-  final_comp$age<- as.numeric(final_comp$age) #converting the age column from characters to numerics
-  print(head(myDataFrame))
+library(stringr)
 
-  myIndexList = list()
+plotGenerator <- function(myDataFrame, geneNameList, contCovar, catCovar1, catCovar2) {
+  myDataFrame <- as.data.frame(myDataFrame)
+  final_comp$age<- as.numeric(final_comp$age) #converting the age column from characters to numerics
+  #print(head(myDataFrame))
+
+  #was having a lot of trouble referring to the input variables 
+  #was advised by my partner to refer to them as indices
+  geneIndexList = list() #creating a list of indices in myDataFrame of the genes
   contVarIndex = 0
   catCovar1Index = 0
   catCovar2Index = 0
   
-  for (i in 1:length(myDataFrame))
-  {
-    for (j in 1:length(geneNameList))
-    {
-      if (colnames(myDataFrame)[i] == geneNameList[j])
-      {
-        myIndexList <- append(myIndexList, i)
+  for (i in 1:length(myDataFrame)) { 
+    #for loop to check if any column names match the inputted genes
+    for (j in 1:length(geneNameList)) { #for loop to cycle through each gene
+      if (colnames(myDataFrame)[i] == geneNameList[j]) {
+        #if the column header in the dataframe matches the inputted gene
+        geneIndexList <- append(geneIndexList, i) #add it to the list of gene indices
       }
       
-      if (colnames(myDataFrame)[i] == contCovar)
-      {
+      if (colnames(myDataFrame)[i] == contCovar) { 
         contVarIndex = i
       }
       
-      if (colnames(myDataFrame)[i] == catCovar1)
-      {
+      if (colnames(myDataFrame)[i] == catCovar1) {
         catCovar1Index = i
       }
       
-      if (colnames(myDataFrame)[i] == catCovar2)
-      {
+      if (colnames(myDataFrame)[i] == catCovar2) {
         catCovar2Index = i
       }
     }
   }
   
-  for (i in 1:length(geneNameList))
-  {
+  for (i in 1:length(geneNameList)) { #for loop for each inputted gene
+    
     # ------------------------- HISTOGRAM ---------------------------------
-    geneColumnName = colnames(myDataFrame)[myIndexList[[i]]]
-    geneColumnData = myDataFrame[[myIndexList[[i]]]]
+    geneColumnName = colnames(myDataFrame)[geneIndexList[[i]]]
+    #taking the index from earlier, finding it in the dataframe
+    #renaming it as the new column name for ease of reference
+    geneColumnData = myDataFrame[[geneIndexList[[i]]]]
+    #taking the gene expression data of the gene
     histogramPlot <- ggplot(myDataFrame, aes(x=geneColumnData))+
-                      geom_histogram(binwidth = 5, boundary = 0)+ #boundary at 0 to group data
-                      labs(title = paste('Distribution of ', geneColumnName),
-                           x = paste('Expression of ', geneColumnName),
+                      geom_histogram(boundary = 0)+ #boundary at 0 to group data
+                      #did not keep bins = 5 because other genes aren't represented properly
+                      labs(title = paste('Distribution of', geneColumnName),
+                           #paste function similar to f' string in python
+                           x = paste('Expression of', geneColumnName),
                            y = 'Frequency') +
                       theme_light()+
                       theme(plot.title = element_text(hjust=0.5)) #centering title
@@ -58,12 +62,18 @@ plotGenerator <- function(myDataFrame, geneNameList, contCovar, catCovar1, catCo
     
     # ------------------------- SCATTER PLOT ------------------------------
     contVarColumnName = colnames(myDataFrame)[contVarIndex]
-    # https://stackoverflow.com/questions/6386314/how-do-i-get-discrete-factor-levels-to-be-treated-as-continuous
-    # needed to convert discrete variable to continuous
-    scatterPlot <- ggplot(final_comp, aes(x=as.numeric(as.character(myDataFrame[[contVarIndex]])), y=geneColumnData))+
-      geom_point()+ #two age unknowns from the data
-      labs(title = paste('',contVarColumnName, ' compared to distribution of gene ', geneColumnName),
-           x = contVarColumnName, y = paste('Expression of ', contVarColumnName))+
+    #same as earlier, taking the column name of the continuous variable
+    #and referring to it as contVarColumnName
+    scatterPlot <- ggplot(final_comp, 
+                          aes(x=as.numeric(as.character(myDataFrame[[contVarIndex]])), 
+                              y=geneColumnData))+
+      #https://stackoverflow.com/questions/6386314/how-do-i-get-discrete-factor-levels-to-be-treated-as-continuous
+      #needed to convert discrete variable to continuous
+      geom_point()+ 
+      labs(title = paste(str_to_title(contVarColumnName), 'compared to distribution of gene', geneColumnName),
+           x = str_to_title(contVarColumnName), 
+           y = paste('Expression of', str_to_title(contVarColumnName)))+
+      #str_to_title to capitalize the first letter of the input
       scale_x_continuous()+
       theme_light()+
       theme(plot.title = element_text(hjust=0.5))
