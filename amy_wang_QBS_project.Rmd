@@ -7,7 +7,9 @@ date: "2024-07-25"
 ```{r}
 #importing the csv files
 library(tidyverse)
-library(dplyr)    # alternatively, this also loads %>%
+library(dplyr)
+library(ggplot2)
+library(rlang)
 
 
 datafiles <- list.files(path = "/Users/amyw/Documents/QBS103/DSProject", pattern = ".csv")
@@ -74,9 +76,6 @@ ggplot(final_comp, aes(x= age, y=AAGAB))+
   scale_x_continuous(breaks=seq(0,150,by=10))+
   theme_light()+
   theme(plot.title = element_text(hjust=0.5))
-
-
-
 ```
 
 ```{r}
@@ -87,7 +86,7 @@ box_first <- dplyr::select(final_comp,AAGAB, sex, mechanical_ventilation) #selec
 box_long <- box_first %>% #pivoting long to prep for boxplot
   tidyr::pivot_longer(cols= c(sex, mechanical_ventilation), 
                       names_to = 'categorical', values_to = 'Sex/MechVent')
-#head(box_long)
+head(box_long)
 
 ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
   geom_boxplot()+
@@ -103,18 +102,51 @@ final_df <- as.data.frame(t(final_comp))
 #print(head(final_df)) 
 #reformatting dataframe back to industry standard of having participant ID as the column names
 ```
+
 ```{r}
 #defining function
 graphing_func <- function(frame_of_data, gene_names, cont_var, cat_var1, cat_var2) {
+#   print(gene_names)
+#creating new dataframe
+  chosen_data <- data.frame()
   
+  for (gene in gene_names){
+     chosen_data <- data.frame(
+      gene <- frame_of_data[, gene],
+      cont_var <- frame_of_data[ ,cont_var],
+      cat_var1 <- frame_of_data[ ,cat_var1],
+      cat_var2 <- frame_of_data[ ,cat_var2])
+     print(head(chosen_data))
+     }
+  print(cont_var)
+  return(chosen_data)
+  
+}
+       #select(frame_of_data, !!sym(gene), !!sym(cont_var), !!sym(cat_var1), !!sym(cat_var2)) }
+
+a <- graphing_func (final_comp, 'A1CF', 'age', 'sex', 'mechanical_ventilation')
+
+c(final_comp[, 'age'])
+#0print(final_comp[, 'A1CF'])
+# print(head(final_comp))
+  
+
+# 
+#   for (gene in genes_names){
+#     print (gene)
+#     chosen_data <- select(final_comp, !!sym(gene_names), !!sym(cont_var), !!sym(cat_var1), !!sym(cat_var2)) }
+#   print(gene_names)
+
+
 #function for creating histogram
-  for (g in 1:length(gene_names)) {
-    as.numeric(gene_names[[g]])
-    a <- ggplot(final_comp, aes(x = as.numeric(gene_names[[g]]))) +
+    #as.numeric(gene_names[[g]])
+    a <- ggplot(final_comp, aes(x = !!sym(gene_names))) +
         geom_histogram()+#binwidth = 5, boundary = 0) +
-        labs(title = 'Distribution of {gene_names}', x = 'Expression of Gene', y = 'Frequency') +
-        theme_light() 
-    print(a)}
+        labs(title = paste('Distribution of', 'gene_names'), x = 'Expression of Gene', y = 'Frequency') +
+        theme_light()
+  print(a)
+  }
+}
 
 
 #scatterplot creation
@@ -122,83 +154,51 @@ graphing_func <- function(frame_of_data, gene_names, cont_var, cat_var1, cat_var
   
   for (g in 1:length(gene_names)) {
     as.numeric(gene_names[[g]])
-    b <- ggplot(final_comp, aes(x= cont_var, y= gene_names[[g]]))+
+    b <- ggplot(final_comp, aes(x= frame_of_data[,cont_var], y= gene_names[[g]]))+
         geom_point()+ #two age unknowns from the data
         labs(title = 'Age compared to distribution of {gene}', 
              x = '{cont var}', y = 'Expression of {gene}')+
-        scale_x_continuous(breaks=seq(0,150,by=10))+
+        scale_x_continuous()#breaks=seq(0,150,by=10))+
         theme_light()+
         theme(plot.title = element_text(hjust=0.5))
     print(b)
-  
-  
-  #pivoting long
-  final_comp_long <- final_comp %>% #pivoting long to prep for boxplot
-  tidyr::pivot_longer(cols= c(cat_var1, cat_var2), 
-                      names_to = 'categorical', values_to = '{catvar1/2}')
-  
-  
-  #boxplot creation
-  ggplot(final_comp_long, aes (cat_var1, gene_names, fill = cat_var2))+
-    geom_boxplot()+
-    theme_light()+
-    labs(title = 'Distribution of AAGAB Based on Sex Coloured by Mechanical Ventilation', 
-         x = 'Sex', y = 'Expression of AAGAB')+
-    theme(plot.title = element_text(hjust=0))+
-    scale_fill_discrete(name = 'Mechanical Ventilation Status')+
-    scale_x_discrete(labels = c('Female', 'Male', 'Unknown'))
+  }
 }
 
 
 
-genez <- [final_comp$A1BG, final_comp$AAGAB]
 
-graphing_func (final_comp, genez)
 
 ```
 
 
 
 ```{r}
-library(ggplot2) 
 
 #defining function
-graphing_func <- function(frame_of_data, gene_names, cont_var, cat_var1, cat_var2) {
-  
-#function for creating histogram
-  for (g in 1:length(gene_names)) {
-    as.numeric(gene_names[[g]])
-    a <- ggplot(final_comp, aes(x = as.numeric(gene_names[[g]]))) +
-        geom_histogram()+#binwidth = 5, boundary = 0) +
-        labs(title = 'Distribution of {gene_names}', x = 'Expression of Gene', y = 'Frequency') +
-        theme_light() 
-    print(a)}
+graphing_funco <- function(frame_of_data, gene_names, cont_var, cat_var1, cat_var2) {
 
-  
-  
-#scatterplot creation
-  final_comp$age<- as.numeric(final_comp$age) #converting the age column from characters to numerics
-  
-  for (g in 1:length(gene_names)) {
-    as.numeric(gene_names[[g]])
-    b <- ggplot(final_comp, aes(x= cont_var, y= gene_names[[g]]))+
-        geom_point()+ #two age unknowns from the data
-        labs(title = 'Age compared to distribution of {gene}', 
-             x = '{cont var}', y = 'Expression of {gene}')+
-        scale_x_continuous(breaks=seq(0,150,by=10))+
-        theme_light()+
-        theme(plot.title = element_text(hjust=0.5))
-    print(b)
-  }
-  
-  
-  
 #selecting data for boxplot
-  for (g in 1:length(gene_names)) {
-    box_one <- final_comp %>%
-    select(gene_names[[g]], cat_var1, cat_var2) %>%
-    tidyr::pivot_longer(cols= c(cat_var1, cat_var2), 
-                      names_to = 'categorical', values_to = '{catvar1/2}')
+  #for (g in 1:length(gene_names)) {
+    #as.double(gene_names)
+
+    box_first <- dplyr::select(final_comp, final_comp[,gene_names], final_comp[[cat_var1]], final_comp[[cat_var2]]) #selecting data columns for easier viewing
+#print(box_first)
+
+  box_long <- box_first %>% #pivoting long to prep for boxplot
+  tidyr::pivot_longer(cols= c(cat_var1, cat_var2), 
+                      names_to = 'categorical', values_to = 'Sex/MechVent')
+
+  }
+#}  
+    
+#print(head(box_one))
+graphing_funco(final_comp,'A1BG', 'sex', 'mechanical_ventilation')
+head(box_first)
+print(class(final_comp[["A1BG"]]))
+print(class(final_comp$age))
+print(final_comp$A1BG)
+print(class(final_comp[['age']]))
   
 
 #boxplot creation
@@ -215,45 +215,31 @@ graphing_func <- function(frame_of_data, gene_names, cont_var, cat_var1, cat_var
   }
 }
 
-graphing_func(final_comp, list(final_comp$A1BG), final_comp$age, sex, mechanical_ventilation)
-
-```
-
-
-```{r}
-  #selecting data for boxplot
-
-
-box_one <- final_comp %>%
-  dplyr::select(AAGAB, sex, mechanical_ventilation) %>%
-  tidyr::pivot_longer(cols= c(sex, mechanical_ventilation), 
-                      names_to = 'categorical', values_to = '{catvar1/2}')
-
 print(head(box_one))
 
-
-
-
-
-#print(head(final_comp))
-box_first <- dplyr::select(final_comp,AAGAB, sex, mechanical_ventilation) #selecting data columns for easier viewing
-#print(box_first)
-
-box_long <- box_first %>% #pivoting long to prep for boxplot
-  tidyr::pivot_longer(cols= c(sex, mechanical_ventilation), 
-                      names_to = 'categorical', values_to = 'Sex/MechVent')
-#head(box_long)
 ```
-```{r}
-woo <- function(frame_of_data, gene_names, cat_var1, cat_var2) {
-    box_one <- as.data.frame(final_comp) %>%
-    dplyr::select(gene_names, cat_var1, cat_var2) %>%
+box_one <- final_comp %>%
+    select(gene_names[[g]], cat_var1, cat_var2) %>%
     tidyr::pivot_longer(cols= c(cat_var1, cat_var2), 
                       names_to = 'categorical', values_to = '{catvar1/2}')
-    print(head(box_one))
+
+
+```{r}
+graphing_func <- function(frame_of_data, gene_names)#, cont_var, cat_var1, cat_var2) {
+  frame_of_data <- final_comp
+#creating new dataframe
+  chosen_data <- dplyr::select(final_comp, final_comp[,gene_names])#, final_comp[,cont_var],final_comp[,cat_var1], final_comp[,cat_var2])
+  print(head(chosen_data))
+  
 }
 
-woo(final_comp, final_comp$AAGAB, final_comp$sex, final_comp$mechanical_ventilation)
+graphing_func (final_comp, 'A1BG')#, 'age', 'sex', 'mechanical_ventilation')
+
+print(head(final_comp))
+woo <- 'A1BG'
+print((final_comp[,woo]))
+
+
 ```
 
 

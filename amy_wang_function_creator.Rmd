@@ -1,0 +1,98 @@
+---
+title: "QBS_sub_2"
+output: pdf_document
+date: "2024-08-07"
+---
+
+```{r}
+plotGenerator <- function(myDataFrame, geneNameList, contCovar, catCovar1, catCovar2)
+{
+  myDataFrame = as.data.frame(myDataFrame)
+  final_comp$age<- as.numeric(final_comp$age) #converting the age column from characters to numerics
+  print(head(myDataFrame))
+
+  myIndexList = list()
+  contVarIndex = 0
+  catCovar1Index = 0
+  catCovar2Index = 0
+  
+  for (i in 1:length(myDataFrame))
+  {
+    for (j in 1:length(geneNameList))
+    {
+      if (colnames(myDataFrame)[i] == geneNameList[j])
+      {
+        myIndexList <- append(myIndexList, i)
+      }
+      
+      if (colnames(myDataFrame)[i] == contCovar)
+      {
+        contVarIndex = i
+      }
+      
+      if (colnames(myDataFrame)[i] == catCovar1)
+      {
+        catCovar1Index = i
+      }
+      
+      if (colnames(myDataFrame)[i] == catCovar2)
+      {
+        catCovar2Index = i
+      }
+    }
+  }
+  
+  for (i in 1:length(geneNameList))
+  {
+    # ------------------------- HISTOGRAM ---------------------------------
+    geneColumnName = colnames(myDataFrame)[myIndexList[[i]]]
+    geneColumnData = myDataFrame[[myIndexList[[i]]]]
+    histogramPlot <- ggplot(myDataFrame, aes(x=geneColumnData))+
+                      geom_histogram(binwidth = 5, boundary = 0)+ #boundary at 0 to group data
+                      labs(title = paste('Distribution of ', geneColumnName),
+                           x = paste('Expression of ', geneColumnName),
+                           y = 'Frequency') +
+                      theme_light()+
+                      theme(plot.title = element_text(hjust=0.5)) #centering title
+    print(histogramPlot)
+    
+    # ------------------------- SCATTER PLOT ------------------------------
+    contVarColumnName = colnames(myDataFrame)[contVarIndex]
+    # https://stackoverflow.com/questions/6386314/how-do-i-get-discrete-factor-levels-to-be-treated-as-continuous
+    # needed to convert discrete variable to continuous
+    scatterPlot <- ggplot(final_comp, aes(x=as.numeric(as.character(myDataFrame[[contVarIndex]])), y=geneColumnData))+
+      geom_point()+ #two age unknowns from the data
+      labs(title = paste('',contVarColumnName, ' compared to distribution of gene ', geneColumnName),
+           x = contVarColumnName, y = paste('Expression of ', contVarColumnName))+
+      scale_x_continuous()+
+      theme_light()+
+      theme(plot.title = element_text(hjust=0.5))
+    
+    print(scatterPlot)
+    
+    # ------------------------- BOX PLOT ----------------------------------
+    box_first <- dplyr::select(myDataFrame, geneColumnName, catCovar1, catCovar2) #selecting data columns for easier viewing
+    #print(box_first)
+     
+    # box_long <- box_first %>% #pivoting long to prep for boxplot
+    #   tidyr::pivot_longer(cols= c(catCovar1, catCovar2), 
+    #                       names_to = 'Categorical', values_to = 'covar1/covar2')
+    # print(head(box_long))
+     
+    boxPlot <- ggplot(box_first, aes (myDataFrame[[catCovar1Index]], geneColumnData, fill = myDataFrame[[catCovar2Index]]))+
+                geom_boxplot()+
+                theme_light()+
+                labs(title = paste('Distribution of ', geneColumnName, ' Based on ', catCovar1, ' Coloured by ', catCovar2),
+                     x = paste(catCovar1), y = paste('Expression of ', geneColumnName))+
+                theme(plot.title = element_text(hjust=0))+
+                scale_fill_discrete(name = paste(catCovar2, ' Status'))+
+                scale_x_discrete(labels = c('Female', 'Male', 'Unknown'))
+    
+    print(boxPlot)
+  }
+}
+
+plotGenerator(final_comp, list("AAGAB", "A1BG", "A2M"), 'age', 'sex', 'mechanical_ventilation')
+
+```
+
