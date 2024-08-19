@@ -1,0 +1,232 @@
+---
+title: "final_assignment"
+output: pdf_document
+date: "2024-08-13"
+---
+
+```{r}
+library(pheatmap)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(rlang)
+```
+
+```{r}
+
+#---------------------------INITIALIZING DATA-------------------------
+datafiles <- list.files(path = "/Users/amyw/Documents/QBS103/DSProject", pattern = ".csv")
+print(datafiles)
+
+setwd("/Users/amyw/Documents/QBS103/DSProject")
+
+for (file in datafiles){
+  the_file <- read.csv(file)
+}
+  
+setwd("/Users/amyw/Documents/QBS103/DSProject")
+
+gene_df <- read.csv('QBS103_GSE157103_genes.csv', header = TRUE,row.names = 1)
+meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE, row.names = 1)
+
+working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
+#print(head(working_genes))
+
+new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
+final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
+#print(head(final_comp))
+
+
+```
+
+```{r}
+#-----------------------SEPARATING BY CAT VARIABLE------------------------
+ventData <- final_comp[final_comp$mechanical_ventilation == ' yes', ]
+ventData
+nonventData <- final_comp[final_comp$mechanical_ventilation == ' no', ]
+nonventData
+```
+
+
+
+```{r}
+#---------------------------PART 1: DISTRIBUTION---------------------------
+contVars <- c('age', 'lactate.mmol.l.', 'fibrinogen')
+
+for (i in 1:length(final_comp)) {
+  for (j in 1:length(contVars)) {
+    if (colnames(final_comp)[i] == contVars[j])
+      print(paste('Index for', contVars[j] ,'is', i))
+      contVarsIndex <- append(contVarsIndex, i)
+    }
+}
+contVarsIndex = c(110, 122, 123)
+print(colnames(final_comp[110]))
+```
+
+```{r}
+for (index in contVarsIndex){
+  #checking distribution
+  xAxis = 0
+  
+  if (colnames(final_comp[index]) == 'age'){
+    xAxis <- 'Age'
+    # print(xAxis)
+  }
+
+  else if (colnames(final_comp[index]) == 'lactate.mmol.l.'){
+    xAxis <- 'Lactate'
+    # print(xAxis)
+  }
+  else {#(colnames(final_comp[index]) == 'fibrinogen'){
+    xAxis <- 'Fibrinogen'
+    # print(xAxis)
+  }
+
+
+  
+  final_comp[[index]]<- as.numeric(final_comp[[index]])
+  
+  plot<- ggplot(data = final_comp,aes(x = final_comp[index]) +
+                geom_histogram() + 
+                labs(x = paste(',',xAxis), y = 'Frequency') +
+                theme_classic())
+  print(plot)
+
+}
+```
+
+```{r}
+#-----------------PART 1: VALUES FOR CONT VAR FOR VENTILATED PATIENTS--------------
+for (index in contVarsIndex) { #110, 122, 123
+  medVar <- median(ventData[[index]], na.rm = TRUE)
+  
+  # Quartile values
+  quantileVar <- quantile(ventData[[index]], na.rm = TRUE)
+  
+  # IQR (Q3 - Q1)
+  IQRVar <- IQR(ventData[[index]], na.rm = TRUE)
+  
+  lowerQua <- quantile(ventData[[index]], 1/4, na.rm = TRUE)
+  
+  higherQua <- quantile(ventData[[index]], 3/4, na.rm = TRUE)
+  
+  #print median and IQR statement
+  print(paste('Median [IQR] of ventilated',colnames(ventData[index]),':',round((medVar),digits = 2),
+               '[',round((lowerQua), digits = 2), ',', round((higherQua), digits = 2),']'))
+  
+}
+
+
+```
+
+
+
+```{r}
+#-----------------PART 1: VALUES FOR CONT VAR FOR NONVENTILATED PATIENTS--------------
+for (index in contVarsIndex) { #110, 122, 123
+  medVar <- median(nonventData[[index]], na.rm = TRUE)
+  
+  # Quartile values
+  quantileVar <- quantile(nonventData[[index]], na.rm = TRUE)
+  
+  # IQR (Q3 - Q1)
+  IQRVar <- IQR(nonventData[[index]], na.rm = TRUE)
+  
+  lowerQua <- quantile(nonventData[[index]], 1/4, na.rm = TRUE)
+  
+  higherQua <- quantile(nonventData[[index]], 3/4, na.rm = TRUE)
+  
+  #print median and IQR statement
+  print(paste('Median [IQR] of non- ventilated',colnames(nonventData[index]),':',round((medVar),digits = 2),
+               '[',round((lowerQua), digits = 2), ',', round((higherQua), digits = 2),']'))
+  
+}
+
+
+
+#-------------------PART 1: CATEGORICAL DATA---------------------------------
+data.frame('n' = c(table(ventData$sex)),
+          'perc' = c(round(table(ventData$sex)/126*100,digits = 2)))
+
+
+data.frame('n' = c(table(nonventData$sex)),
+          'perc' = c(round(table(nonventData$sex)/126*100,digits = 2)))
+
+#--------------- PART 1: for ICU status------------------------
+data.frame('n' = c(table(ventData$icu_status)),
+          'perc' = c(round(table(ventData$icu_status)/126*100,digits = 2)))
+
+
+data.frame('n' = c(table(nonventData$icu_status)),
+          'perc' = c(round(table(nonventData$icu_status)/126*100,digits = 2)))
+```
+
+
+
+
+
+```{r}
+#----------------------------PART 2: HISTOGRAM OF AAGAB--------------------------
+#plotting histogram of AAGAB
+working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
+print(head(working_genes))
+
+ggplot(working_genes, aes(x=AAGAB))+
+  geom_histogram(binwidth = 5, boundary = 0)+ #boundary at 0 to group data
+  labs(title = 'Distribution of AAGAB', x = 'Expression of AAGAB', y = 'Frequency')+
+  theme_light()+
+  theme(plot.title = element_text(hjust=0.5))
+
+new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
+final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
+print(head(final_comp))
+
+
+final_comp$age<- as.numeric(final_comp$age) #converting the age column from characters to numerics
+
+
+#--------------------------PART 2: SCATTERPLOT OF AAGAB--------------------------
+ggplot(final_comp, aes(x= age, y=AAGAB))+
+  geom_point()+ #two age unknowns from the data
+  labs(title = 'Age compared to distribution of gene AAGAB', 
+       x = 'Age (years)', y = 'Expression of AAGAB')+
+  scale_x_continuous(breaks=seq(0,150,by=10))+
+  theme_light()+
+  theme(plot.title = element_text(hjust=0.5))
+
+
+box_first <- dplyr::select(final_comp,AAGAB, sex, mechanical_ventilation) #selecting data columns for easier viewing
+#print(box_first)
+
+#----------------------------PART 2: BOXPLOT OF AAGAB--------------------------
+
+box_long <- box_first %>% #pivoting long to prep for boxplot
+  tidyr::pivot_longer(cols= c(sex, mechanical_ventilation), 
+                      names_to = 'categorical', values_to = 'Sex/MechVent')
+head(box_long)
+
+ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
+  geom_boxplot()+
+  theme_light()+
+  labs(title = 'Distribution of AAGAB Based on Sex Coloured by Mechanical Ventilation', 
+       x = 'Sex', y = 'Expression of AAGAB')+
+  theme(plot.title = element_text(hjust=0))+
+  scale_fill_discrete(name = 'Mechanical Ventilation Status')+
+  scale_x_discrete(labels = c('Female', 'Male', 'Unknown'))
+```
+
+
+```{r}
+#---------------------------------PART 3: HEATMAP------------------------------
+#generating variance values
+geneVariance <- apply(final_comp[[1]], MARGIN = 2, FUN = var)
+
+#ordering rows of genes in order of decreasing variance
+geneVariance <- geneVariance[order(geneVariance,decreasing = T),]
+
+# Log2-normalize data for plotting
+log2GeneVariance <- log2(geneVariance)
+```
+
+
