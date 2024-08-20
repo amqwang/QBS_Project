@@ -121,6 +121,11 @@ for (index in contVarsIndex) { #110, 122, 123
 
 ```
 
+```{r}
+
+```
+
+
 
 
 ```{r}
@@ -221,57 +226,37 @@ ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
 ```{r}
 #------------------------------PART 3: HEATMAP
 
-
-# print(class(final_comp))
-# final_comp$A1BG <- as.numeric(final_comp$A1BG)
+# #generating variance values
+# geneVariance <- apply(final_comp, MARGIN = 2, FUN = var, )
 # 
-# print(class(final_comp$A1BG[1]))
-# print(is.numeric(final_comp))
-# sapply(final_comp$A4GNT, is.numeric)
+# #ordering rows of genes in order of decreasing variance
+# geneVariance <- final_comp[order(geneVariance,decreasing = T),]
 
-#Calculate correlations
-corFinal <- cor(x= final_comp[15:30], method = 'spearman')
-
-# Plot correlations
-corrplot(corFinal,method = 'circle')
-
-
-
-#generating variance values
-geneVariance <- apply(corFinal, MARGIN = 1, FUN = var, )
-
-#ordering rows of genes in order of decreasing variance
-geneVariance <- corFinal[order(geneVariance,decreasing = T),]
-
-# Log2-normalize data for plotting
-log2GeneVariance <- log2(corFinal)
-
-# Generate heatmap without clustering
-pheatmap(log2GeneVariance[1:15,],
-         cluster_rows = F,
-         cluster_cols = F)
-
-#----------------------------add clustering
-pheatmap(log2GeneVariance[1:15,],
-         clustering_distance_cols = 'euclidean',
-         clustering_distance_rows = 'euclidean')
-```
-
-
-```{r}
 
 # Define covariates for tracking bar
 
-annotationData <- final_comp$sex
-annotationColors <- list(Status = c('Disease X' = 'aquamarine4',
-                                    'Healthy' = 'deepskyblue4'))
+annotationData <- data.frame(sex = final_comp$sex,icu_status = final_comp$icu_status)
+unique(annotationData$icu_status)
 
+rownames(annotationData) <- rownames(final_comp)
+
+annotationColors <- list(sex= c(' male' = 'aquamarine4',
+                                   ' female' = 'deepskyblue4',
+                                   ' unknown' = 'red'),
+                            icu_status = c(' yes' = 'yellow',
+                                           ' no' = 'pink'))
+
+f2 <-data.frame(final_comp[,15:25])
+rownames(f2) = rownames(final_comp)
 # Generate heatmap
-pheatmap(log2.miRNA[1:20,],
-         clustering_distance_cols = 'euclidean',
-         clustering_distance_rows = 'euclidean',
-         annotation_col = annotationData,
+pheatmap(f2,
+         show_rownames = F,
+         cluster_rows = T,
+         cluster_cols = T,
+         annotation_row = annotationData,
          annotation_colors = annotationColors)
+
+
 ```
 
 
