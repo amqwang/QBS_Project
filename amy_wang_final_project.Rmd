@@ -11,6 +11,8 @@ library(dplyr)
 library(ggplot2)
 library(rlang)
 library(corrplot)
+install.packages("table1")
+library(table1)
 ```
 
 ```{r}
@@ -42,9 +44,9 @@ final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the
 
 ```{r}
 #-----------------------SEPARATING BY CAT VARIABLE------------------------
-ventData <- final_comp[final_comp$mechanical_ventilation == ' yes', ]
+ventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' yes', ])
 ventData
-nonventData <- final_comp[final_comp$mechanical_ventilation == ' no', ]
+nonventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' no', ])
 nonventData
 ```
 
@@ -54,6 +56,7 @@ nonventData
 #---------------------------PART 1: DISTRIBUTION---------------------------
 #getting index numbers for continuous variables
 contVars <- c('age', 'lactate.mmol.l.', 'fibrinogen')
+contVarsIndex <- list()
 
 for (i in 1:length(final_comp)) {
   for (j in 1:length(contVars)) {
@@ -99,76 +102,134 @@ for (index in contVarsIndex){
 
 ```{r}
 #-----------------PART 1: VALUES FOR CONT VAR FOR VENTILATED PATIENTS--------------
-for (index in contVarsIndex) { #110, 122, 123
-  medVar <- median(ventData[[index]], na.rm = TRUE)
-  
-  # Quartile values
-  quantileVar <- quantile(ventData[[index]], na.rm = TRUE)
-  
-  # IQR (Q3 - Q1)
-  IQRVar <- IQR(ventData[[index]], na.rm = TRUE)
-  
-  lowerQua <- quantile(ventData[[index]], 1/4, na.rm = TRUE)
-  
-  higherQua <- quantile(ventData[[index]], 3/4, na.rm = TRUE)
-  
-  #print median and IQR statement
-  print(paste('Median [IQR] of ventilated',colnames(ventData[index]),':',round((medVar),digits = 2),
-               '[',round((lowerQua), digits = 2), ',', round((higherQua), digits = 2),']'))
-  
-}
 
+#lactate non uniformly distributed
+
+medVar <- median(ventData$lactate.mmol.l., na.rm = TRUE)
+# Quartile values
+quantileVar <- quantile(ventData[122], na.rm = TRUE)
+  
+# IQR (Q3 - Q1)
+IQRVar <- IQR(ventData$lactate.mmol.l., na.rm = TRUE)
+  
+lowerQua <- quantile(ventData$lactate.mmol.l., 1/4, na.rm = TRUE)
+  
+higherQua <- quantile(ventData$lactate.mmol.l., 3/4, na.rm = TRUE)
+  
+#print median and IQR statement
+print(paste('Median [IQR] of lactate of age in ventilated patients:',round((medVar),digits = 2),
+             '[',round((lowerQua), digits = 2), ',', round((higherQua), digits = 2),']'))
+
+
+#for age and fibrinogen which are uniformly distributed
+
+print(paste('Mean (sd) of age in ventilated patients: ',round(mean(ventData$age),digits = 2),' (',
+             round(sd(ventData$age),digits = 2),')'))
+
+
+print(paste('Mean (sd) of fibrinogen in ventilated patients: ',round(mean(ventData$fibrinogen, na.rm=TRUE),digits = 2),' (',
+             round(sd(ventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
 
 ```
-
-```{r}
-
-```
-
-
 
 
 ```{r}
 #-----------------PART 1: VALUES FOR CONT VAR FOR NONVENTILATED PATIENTS--------------
-for (index in contVarsIndex) { #110, 122, 123
-  medVar <- median(nonventData[[index]], na.rm = TRUE)
+
+#lactate non uniformly distributed
+
+medVar <- median(nonventData$lactate.mmol.l., na.rm = TRUE)
+# Quartile values
+quantileVar <- quantile(nonventData[122], na.rm = TRUE)
   
-  # Quartile values
-  quantileVar <- quantile(nonventData[[index]], na.rm = TRUE)
+# IQR (Q3 - Q1)
+IQRVar <- IQR(nonventData$lactate.mmol.l., na.rm = TRUE)
   
-  # IQR (Q3 - Q1)
-  IQRVar <- IQR(nonventData[[index]], na.rm = TRUE)
+lowerQua <- quantile(nonventData$lactate.mmol.l., 1/4, na.rm = TRUE)
   
-  lowerQua <- quantile(nonventData[[index]], 1/4, na.rm = TRUE)
+higherQua <- quantile(nonventData$lactate.mmol.l., 3/4, na.rm = TRUE)
   
-  higherQua <- quantile(nonventData[[index]], 3/4, na.rm = TRUE)
-  
-  #print median and IQR statement
-  print(paste('Median [IQR] of non- ventilated',colnames(nonventData[index]),':',round((medVar),digits = 2),
-               '[',round((lowerQua), digits = 2), ',', round((higherQua), digits = 2),']'))
-  
-}
+#print median and IQR statement
+print(paste('Median [IQR] of lactate in non-ventilated patients:',round((medVar),digits = 2),
+             '[',round((lowerQua), digits = 2), ',', round((higherQua), digits = 2),']'))
 
 
+#for age and fibrinogen which are uniformly distributed
 
+print(paste('Mean (sd) of age in non-ventilated patients: ',round(mean(nonventData$age, na.rm=TRUE),digits = 2),' (',
+             round(sd(nonventData$age, na.rm=TRUE),digits = 2),')'))
+
+print(paste('Mean (sd) of fibrinogen in non-ventilated patients: ',round(mean(nonventData$fibrinogen, na.rm=TRUE),digits = 2),' (',
+             round(sd(nonventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
+
+```
+
+```{r}
 #-------------------PART 1: CATEGORICAL DATA---------------------------------
+
+print(length(ventData$sex))
 data.frame('n' = c(table(ventData$sex)),
-          'perc' = c(round(table(ventData$sex)/126*100,digits = 2)))
+          'perc' = c(round(table(ventData$sex)/(length(ventData$sex))*100,digits = 2)))
 
 
 data.frame('n' = c(table(nonventData$sex)),
-          'perc' = c(round(table(nonventData$sex)/126*100,digits = 2)))
+          'perc' = c(round(table(nonventData$sex)/(length(nonventData$sex))*100,digits = 2)))
 
 #--------------- PART 1: for ICU status------------------------
 data.frame('n' = c(table(ventData$icu_status)),
-          'perc' = c(round(table(ventData$icu_status)/126*100,digits = 2)))
+          'perc' = c(round(table(ventData$icu_status)/(length(ventData$icu_status))*100,digits = 2)))
 
 
 data.frame('n' = c(table(nonventData$icu_status)),
-          'perc' = c(round(table(nonventData$icu_status)/126*100,digits = 2)))
+          'perc' = c(round(table(nonventData$icu_status)/(length(nonventData$icu_status))*100,digits = 2)))
 ```
 
+```{r}
 
+#+++++++++++++++++++trying table1 package
+#+
+
+
+table1Data <- data.frame(final_comp$mechanical_ventilation, 
+                         final_comp$lactate.mmol.l., 
+                         final_comp$age, 
+                         final_comp$fibrinogen,
+                         final_comp$sex, #categorical
+                         final_comp$icu_status) #categorical
+head(table1Data)
+
+# #factoring categorical data
+# table1Data$final_comp.sex <- 
+#   factor(table1Data$final_comp.sex, 
+#          #levels=c(male, female, unknown),
+#          labels=c("Male", # Reference
+#                   "Female", 
+#                   "Unk"))
+
+
+table1Data$final_comp.mechanical_ventilation <- 
+  factor(table1Data$final_comp.mechanical_ventilation, 
+         levels=c(' no',' yes'),
+         labels=c("No Mechanical Ventilation", # Reference
+                  "Mechanical Ventilation"))
+
+table1Data$final_comp.sex <- 
+  factor(table1Data$final_comp.sex, 
+         levels=c('female','male', missing),
+         labels=c("Female", # Reference
+                  "Male",
+                  "Missing"))
+
+
+
+table1(~final_comp.age + 
+         final_comp.sex + 
+         final_comp.lactate.mmol.l.+ 
+         final_comp.fibrinogen +
+         final_comp.sex +
+         final_comp.icu_status | final_comp.mechanical_ventilation, data=table1Data)
+
+```
 
 
 
@@ -241,7 +302,7 @@ unique(annotationData$icu_status)
 rownames(annotationData) <- rownames(final_comp)
 
 annotationColors <- list(sex= c(' male' = 'aquamarine4',
-                                   ' female' = 'deepskyblue4',
+                                   ' female' = 'purple4',
                                    ' unknown' = 'red'),
                             icu_status = c(' yes' = 'yellow',
                                            ' no' = 'pink'))
