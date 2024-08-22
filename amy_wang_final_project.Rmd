@@ -187,16 +187,21 @@ data.frame('n' = c(table(nonventData$icu_status)),
 ```{r}
 
 #+++++++++++++++++++trying table1 package
-#+
+#https://einsteinmed.edu/uploadedfiles/centers/ictr/new/p3-r4-table-1-package-in-r.pdf
+#https://cran.r-project.org/web/packages/table1/vignettes/table1-examples.html
 
 
-table1Data <- data.frame(final_comp$mechanical_ventilation, 
+table1Data <- data.frame(final_comp$mechanical_ventilation, #stratifying
                          final_comp$lactate.mmol.l., 
                          final_comp$age, 
                          final_comp$fibrinogen,
                          final_comp$sex, #categorical
                          final_comp$icu_status) #categorical
 head(table1Data)
+colnames(table1Data) = c('mech_vent', 'Lactate','Age','Fibrinogen','Sex','icu_status')
+table1Data$Lactate <- as.numeric(table1Data$Lactate)
+table1Data$Age <- as.numeric(table1Data$Age)
+table1Data$Fibrinogen <- as.numeric(table1Data$Fibrinogen)
 
 # #factoring categorical data
 # table1Data$final_comp.sex <- 
@@ -207,27 +212,42 @@ head(table1Data)
 #                   "Unk"))
 
 
-table1Data$final_comp.mechanical_ventilation <- 
-  factor(table1Data$final_comp.mechanical_ventilation, 
+table1Data$mech_vent <- 
+  factor(table1Data$mech_vent, 
          levels=c(' no',' yes'),
          labels=c("No Mechanical Ventilation", # Reference
                   "Mechanical Ventilation"))
 
-table1Data$final_comp.sex <- 
-  factor(table1Data$final_comp.sex, 
-         levels=c('female','male', missing),
-         labels=c("Female", # Reference
-                  "Male",
-                  "Missing"))
+table1Data$icu_status <- 
+  factor(table1Data$icu, 
+         levels=c(' no',' yes'),
+         labels=c("No ICU stay", # Reference
+                  "ICU"))
 
+# table1Data$Sex <- 
+#   factor(table1Data$Sex, 
+#          levels=c('female','male', missing),
+#          labels=c("Female", # Reference
+#                   "Male",
+#                   "Missing"))
 
+# rndr <- function(x, name, ...) {
+#   if (!is.numeric(x)) return(render.categorical.default(x))
+#   what <- switch(name,
+#   Lactate = "Median [Min, Max]",
+#   Age = "Mean (SD)",
+#   Fibrinogen = "Mean (SD")
+#   parse.abbrev.render.code(c("", what))(x)
+# }
 
-table1(~final_comp.age + 
-         final_comp.sex + 
-         final_comp.lactate.mmol.l.+ 
-         final_comp.fibrinogen +
-         final_comp.sex +
-         final_comp.icu_status | final_comp.mechanical_ventilation, data=table1Data)
+#https://stackoverflow.com/questions/73965608/remove-the-mean-row-from-table1-function-in-r
+#https://github.com/benjaminrich/table1/issues/126
+
+table1(~ table1Data$Age+ 
+         table1Data$Lactate+ 
+         table1Data$Fibrinogen+
+         table1Data$Sex+
+         table1Data$icu_status| table1Data$mech_vent, data=table1Data, render.continuous=c(.="Median [Q1 &ndash; Q3]")) #, render = rndr)
 
 ```
 
