@@ -13,6 +13,8 @@ library(rlang)
 library(corrplot)
 install.packages("table1")
 library(table1)
+install.packages(tableone)
+library(tableone)
 ```
 
 ```{r}
@@ -184,6 +186,37 @@ data.frame('n' = c(table(nonventData$icu_status)),
           'perc' = c(round(table(nonventData$icu_status)/(length(nonventData$icu_status))*100,digits = 2)))
 ```
 
+
+```{r}
+#-----------------extra table1 code
+
+# #factoring categorical data
+# table1Data$final_comp.sex <- 
+#   factor(table1Data$final_comp.sex, 
+#          #levels=c(male, female, unknown),
+#          labels=c("Male", # Reference
+#                   "Female", 
+#                   "Unk"))
+
+
+
+
+
+
+
+# table1Data$Sex <- 
+#   factor(table1Data$Sex, 
+#          levels=c('female','male', missing),
+#          labels=c("Female", # Reference
+#                   "Male",
+#                   "Missing"))
+
+```
+
+
+
+
+
 ```{r}
 
 #+++++++++++++++++++trying table1 package
@@ -203,13 +236,6 @@ table1Data$Lactate <- as.numeric(table1Data$Lactate)
 table1Data$Age <- as.numeric(table1Data$Age)
 table1Data$Fibrinogen <- as.numeric(table1Data$Fibrinogen)
 
-# #factoring categorical data
-# table1Data$final_comp.sex <- 
-#   factor(table1Data$final_comp.sex, 
-#          #levels=c(male, female, unknown),
-#          labels=c("Male", # Reference
-#                   "Female", 
-#                   "Unk"))
 
 
 table1Data$mech_vent <- 
@@ -224,33 +250,93 @@ table1Data$icu_status <-
          labels=c("No ICU stay", # Reference
                   "ICU"))
 
-# table1Data$Sex <- 
-#   factor(table1Data$Sex, 
-#          levels=c('female','male', missing),
-#          labels=c("Female", # Reference
-#                   "Male",
-#                   "Missing"))
 
-# rndr <- function(x, name, ...) {
-#   if (!is.numeric(x)) return(render.categorical.default(x))
-#   what <- switch(name,
-#   Lactate = "Median [Min, Max]",
-#   Age = "Mean (SD)",
-#   Fibrinogen = "Mean (SD")
-#   parse.abbrev.render.code(c("", what))(x)
-# }
+rndr <- function(x, name,...) {
+  if (!is.double(x)) return(render.categorical.default(x))
+  what <- switch(name,
+    Lactate = "Mean (SD)")
+    #Age = "Mean (SD)",
+    #Fibrinogen = "Mean (SD)")
+  parse.abbrev.render.code(c("", what))(x)
+}
 
 #https://stackoverflow.com/questions/73965608/remove-the-mean-row-from-table1-function-in-r
 #https://github.com/benjaminrich/table1/issues/126
+
+
+label(table1Data$Age) <- "Age (years)"
+label(table1Data$Lactate) <- "Lactate (mmol/l)"
+label(table1Data$Fibrinogen) <- "Fibrinogen"
+label(table1Data$Sex) <- "Sex"
+label(table1Data$icu_status) <- "ICU Status"
 
 table1(~ table1Data$Age+ 
          table1Data$Lactate+ 
          table1Data$Fibrinogen+
          table1Data$Sex+
-         table1Data$icu_status| table1Data$mech_vent, data=table1Data, render.continuous=c(.="Median [Q1 &ndash; Q3]")) #, render = rndr)
+         table1Data$icu_status| table1Data$mech_vent, data=table1Data, render.continuous=c(.="Median [Q1 &ndash; Q3]"))
+
+print(is.double(table1Data$Lactate))
 
 ```
 
+
+
+
+```{r}
+library(table1)
+# opp2$SEX <- 
+#   factor(opp2$SEX, levels=c(1,2),
+#          labels=c("Male", "Female"))
+# opp2$REGION <-
+#   factor(opp2$REGION, levels=c(1:5),
+#          labels = c("Northeast", "North Central", "South", "West", "Unknown"))
+# opp2$GS <- factor(opp2$GS, levels = c(1:5),
+#                   labels = c("Male", "Female", 
+#                              "Transmasculine", "Transfeminine", "Unknown"))
+# 
+
+
+labels <- list(variables=list(SEX="Sex",
+                              AGE="Age",
+                              LACTATE="Lactate"),
+               groups=list("", "Cis", "TGM"))
+strata <- c(list(Total=labelsopp2), split(opp2, opp2$GS))
+
+
+my.render.cont <- function(x) {
+  with(stats.apply.rounding(stats.default(x), digits=2), 
+       c("",
+         "Median (IQR)"=sprintf("%s (&plusmn; %s)", MEDIAN, IQR)))
+}
+my.render.cat <- function(x) {
+  c("", sapply(stats.default(x), 
+               function(y) with(y, sprintf("%d (%0.0f %%)", FREQ, PCT))))
+}
+
+table1(strata, labels, groupspan=c(1,2, 3),
+       render.continuous=my.render.cont, render.categorical=my.render.cat)`
+```
+
+
+```{r}
+#----------------------tableone
+#https://cran.r-project.org/web/packages/tableone/vignettes/introduction.html
+
+#head(table1Data)
+allVar <- c('Age','Sex','Lactate','Fibrinogen','icu_status','mech_vent')
+
+
+## Vector of categorical variables that need transformation
+catVar <- c('Sex','icu_status','mech_vent')
+
+## Create a TableOne object
+tab1 <- CreateTableOne(vars = allVar, 
+                       strata = 'mech_vent', data = table1Data, factorVars = catVar)
+nonUniform <- c('Lactate')
+print(tab1, nonnormal = nonUniform)#, formatOptions = list(big.mark = ","))
+summary(tab1)
+```
 
 
 ```{r}
@@ -339,5 +425,42 @@ pheatmap(f2,
 
 
 ```
+```{r}
+head(table1)
+
+
+
+
+plotData <- data.frame(final_comp['AAGAB'], final_comp['mechanical_ventilation'])
+
+nonventPlot <- data.frame(plotData[plotData$mechanical_ventilation == ' no', ])
+ventPlot <- data.frame(plotData[plotData$mechanical_ventilation == ' yes', ])
+
+head(plotData)
+
+
+#, binwidth = 5, boundary = 0
+ggplot()+
+  geom_freqpoly(data= nonventData, mapping = aes(x=AAGAB), colour = 'red', binwidth = 5, boundary = 0)+
+  geom_freqpoly(ventData, mapping = aes(x=AAGAB), colour = 'blue', binwidth = 5, boundary = 0)+#boundary at 0 to group data
+  labs(title = 'Distribution of AAGAB Based on Mechanical Ventilation Status', x = 'Expression of AAGAB', y = 'Frequency')+
+  theme_light()+
+  theme(plot.title = element_text(hjust=0.5))
+
+```
+Introduction
+With the spread of COVID-19, there were few studies that examined that molecular-level response to the COVID-19 virus. The study "Large-Scale Multi-omic Analysis of COVID-19 Severity" applied RNA-seq and high resolution mass spectrometry on 128 blood samples from COVID positive and negative patients. Blood samples were collected from these 128 patients with moderate to severe respiratory issues between April 6, 2020 and May 1, 2020 from Albany Medical Center in Albany, NY. There were 219 molecular features identified that were significant to COVID status, many that were important in various disease processes related to COVID-19.
+For the analysis pertaining to this report, the gene AAGAB was studied. AAGAB, or alpha and gamma adaptin binding protein, is a protein coding gene in humans that encodes for proteins that interact with "subunits of complexes involved in clathrin-coated vesicle tracking". AAGAB is expressed throughout the body in the thyroid, colon, and 25 other tissues.  
+
+Methods
+
+Results
+difference in plots: ABI1, ABHD5
+
+References
+https://stats.stackexchange.com/questions/280589/how-to-effectively-visualize-multiple-frequency-polygons-in-ggplot2
+
+
+Overmyer KA, Shishkova E, Miller IJ, et al. Large-Scale Multi-omic Analysis of COVID-19 Severity. Cell Syst. 2021;12(1):23-40.e7. doi:10.1016/j.cels.2020.10.003
 
 
