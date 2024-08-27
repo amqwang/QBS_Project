@@ -13,12 +13,11 @@ library(rlang)
 library(corrplot)
 install.packages("table1")
 library(table1)
-install.packages(tableone)
-library(tableone)
+# install.packages(tableone)
+# library(tableone)
 ```
 
 ```{r}
-
 #---------------------------INITIALIZING DATA-------------------------
 datafiles <- list.files(path = "/Users/amyw/Documents/QBS103/DSProject", pattern = ".csv")
 print(datafiles)
@@ -41,22 +40,14 @@ new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dat
 final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
 #print(head(final_comp))
 
-
 ```
 
 ```{r}
 #-----------------------SEPARATING BY CAT VARIABLE------------------------
 ventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' yes', ])
-ventData
 nonventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' no', ])
-nonventData
-```
 
-
-
-```{r}
-#---------------------------PART 1: DISTRIBUTION---------------------------
-#getting index numbers for continuous variables
+#-------------------GETTING INDEX NUMBERS FOR CONT VARIABLES----------------------
 contVars <- c('age', 'lactate.mmol.l.', 'fibrinogen')
 contVarsIndex <- list()
 
@@ -69,9 +60,7 @@ for (i in 1:length(final_comp)) {
 }
 contVarsIndex = c(110, 122, 123)
 
-```
 
-```{r}
 #-----------------------------CHECKING DISTRIBUTION--------------------
 for (index in contVarsIndex){
   #checking distribution
@@ -124,13 +113,14 @@ print(paste('Median [IQR] of lactate of age in ventilated patients:',round((medV
 
 
 #for age and fibrinogen which are uniformly distributed
-
 print(paste('Mean (sd) of age in ventilated patients: ',round(mean(ventData$age),digits = 2),' (',
              round(sd(ventData$age),digits = 2),')'))
 
 
 print(paste('Mean (sd) of fibrinogen in ventilated patients: ',round(mean(ventData$fibrinogen, na.rm=TRUE),digits = 2),' (',
              round(sd(ventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
+
+head(nonventData)
 
 ```
 
@@ -139,10 +129,11 @@ print(paste('Mean (sd) of fibrinogen in ventilated patients: ',round(mean(ventDa
 #-----------------PART 1: VALUES FOR CONT VAR FOR NONVENTILATED PATIENTS--------------
 
 #lactate non uniformly distributed
+nonventData$lactate.mmol.l. <- as.double(nonventData$lactate.mmol.l.)
 
 medVar <- median(nonventData$lactate.mmol.l., na.rm = TRUE)
 # Quartile values
-quantileVar <- quantile(nonventData[122], na.rm = TRUE)
+quantileVar <- quantile(nonventData$lactate.mmol.l., na.rm = TRUE)
   
 # IQR (Q3 - Q1)
 IQRVar <- IQR(nonventData$lactate.mmol.l., na.rm = TRUE)
@@ -157,6 +148,9 @@ print(paste('Median [IQR] of lactate in non-ventilated patients:',round((medVar)
 
 
 #for age and fibrinogen which are uniformly distributed
+nonventData$age <- as.double(nonventData$age)
+nonventData$fibrinogen <- as.double(nonventData$fibrinogen)
+
 
 print(paste('Mean (sd) of age in non-ventilated patients: ',round(mean(nonventData$age, na.rm=TRUE),digits = 2),' (',
              round(sd(nonventData$age, na.rm=TRUE),digits = 2),')'))
@@ -168,22 +162,20 @@ print(paste('Mean (sd) of fibrinogen in non-ventilated patients: ',round(mean(no
 
 ```{r}
 #-------------------PART 1: CATEGORICAL DATA---------------------------------
-
-print(length(ventData$sex))
 data.frame('n' = c(table(ventData$sex)),
-          'perc' = c(round(table(ventData$sex)/(length(ventData$sex))*100,digits = 2)))
+          'percent' = c(round(table(ventData$sex)/(length(ventData$sex))*100,digits = 2)))
 
 
 data.frame('n' = c(table(nonventData$sex)),
-          'perc' = c(round(table(nonventData$sex)/(length(nonventData$sex))*100,digits = 2)))
+          'percent' = c(round(table(nonventData$sex)/(length(nonventData$sex))*100,digits = 2)))
 
 #--------------- PART 1: for ICU status------------------------
 data.frame('n' = c(table(ventData$icu_status)),
-          'perc' = c(round(table(ventData$icu_status)/(length(ventData$icu_status))*100,digits = 2)))
+          'percent' = c(round(table(ventData$icu_status)/(length(ventData$icu_status))*100,digits = 2)))
 
 
 data.frame('n' = c(table(nonventData$icu_status)),
-          'perc' = c(round(table(nonventData$icu_status)/(length(nonventData$icu_status))*100,digits = 2)))
+          'percent' = c(round(table(nonventData$icu_status)/(length(nonventData$icu_status))*100,digits = 2)))
 ```
 
 
@@ -197,11 +189,6 @@ data.frame('n' = c(table(nonventData$icu_status)),
 #          labels=c("Male", # Reference
 #                   "Female", 
 #                   "Unk"))
-
-
-
-
-
 
 
 # table1Data$Sex <- 
@@ -218,7 +205,6 @@ data.frame('n' = c(table(nonventData$icu_status)),
 
 
 ```{r}
-
 #+++++++++++++++++++trying table1 package
 #https://einsteinmed.edu/uploadedfiles/centers/ictr/new/p3-r4-table-1-package-in-r.pdf
 #https://cran.r-project.org/web/packages/table1/vignettes/table1-examples.html
@@ -449,10 +435,14 @@ ggplot()+
 
 ```
 Introduction
-With the spread of COVID-19, there were few studies that examined that molecular-level response to the COVID-19 virus. The study "Large-Scale Multi-omic Analysis of COVID-19 Severity" applied RNA-seq and high resolution mass spectrometry on 128 blood samples from COVID positive and negative patients. Blood samples were collected from these 128 patients with moderate to severe respiratory issues between April 6, 2020 and May 1, 2020 from Albany Medical Center in Albany, NY. There were 219 molecular features identified that were significant to COVID status, many that were important in various disease processes related to COVID-19.
+With the spread of COVID-19, there were few studies that examined that molecular-level response to the COVID-19 virus. The study "Large-Scale Multi-omic Analysis of COVID-19 Severity" applied RNA-seq and high resolution mass spectrometry on 128 blood samples from COVID positive and negative patients. The objective of this study was to assess the key molecular markers of the  COVID-19 response, associate these markers with clinical metadata and outcome, and generate new hypotheses.
+Blood samples were collected from these 128 patients with moderate to severe respiratory issues between April 6, 2020 and May 1, 2020 from Albany Medical Center in Albany, NY. There were 219 molecular features identified that were significant to COVID status, many that were important in various disease processes related to COVID-19.
 For the analysis pertaining to this report, the gene AAGAB was studied. AAGAB, or alpha and gamma adaptin binding protein, is a protein coding gene in humans that encodes for proteins that interact with "subunits of complexes involved in clathrin-coated vesicle tracking". AAGAB is expressed throughout the body in the thyroid, colon, and 25 other tissues.  
 
 Methods
+Data source, methods for data collection and analysis can be found in the study (CITE).Blood samples were collected from these 128 patients with moderate to severe respiratory issues between April 6, 2020 and May 1, 2020 from Albany Medical Center in Albany, NY. There were 219 molecular features identified that were significant to COVID status, many that were important in various disease processes related to COVID-19. 
+
+For the purposes of this report, R version 4.2 was used in conjunction with the pheatmap, tidyverse, dplyr, ggplot2, rlang, corrplot, and table1 packages to analyze and visualize the data and relationship between variables. The clustering algorithm used to (FINISH)  
 
 Results
 difference in plots: ABI1, ABHD5
@@ -461,6 +451,5 @@ References
 https://stats.stackexchange.com/questions/280589/how-to-effectively-visualize-multiple-frequency-polygons-in-ggplot2
 
 
-Overmyer KA, Shishkova E, Miller IJ, et al. Large-Scale Multi-omic Analysis of COVID-19 Severity. Cell Syst. 2021;12(1):23-40.e7. doi:10.1016/j.cels.2020.10.003
-
+Overmyer, K. A., Shishkova, E., Miller, I. J., Balnis, J., Bernstein, M. N., Peters-Clarke, T. M., Meyer, J. G., Quan, Q., Muehlbauer, L. K., Trujillo, E. A., He, Y., Chopra, A., Chieng, H. C., Tiwari, A., Judson, M. A., Paulson, B., Brademan, D. R., Zhu, Y., Serrano, L. R., … Jaitovich, A. (2021). Large-Scale Multi-omic Analysis of COVID-19 Severity. Cell Systems, 12(1), 23-40.e7. https://doi.org/10.1016/j.cels.2020.10.003
 
