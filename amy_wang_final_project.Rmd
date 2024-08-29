@@ -337,7 +337,8 @@ pheatmap(f2,
          clustering_distance_rows = 'euclidean',
          annotation_row = annotationData, #annotating the rows based on our dataframe
          annotation_colors = annotationColors, #using the specified colour scheme
-         main = 'Heatmap of Gene Expression in Samples')
+         main = 'Heatmap of Gene Expression in Samples',
+         fontfamily = "serif")
 
 ```
 
@@ -347,7 +348,11 @@ pheatmap(f2,
 
 ```{r}
 #---------------PART 3: NEW PLOT TYPE-------------------------------
-plotData <- data.frame(final_comp['AAGAB'], final_comp['mechanical_ventilation'], final_comp['ABHD10'])
+plotData <- data.frame(final_comp['AAGAB'], 
+                       final_comp['ABHD10'],
+                       final_comp['mechanical_ventilation'], 
+                       final_comp['icu_status'],
+                       final_comp['sex'])
 
 colorPalette<-wesanderson::wes_palette('AsteroidCity1')
 
@@ -373,6 +378,29 @@ ggplot(plotData, aes(x=ABHD10, fill = mechanical_ventilation))+
   theme(plot.title = element_text(hjust=0.5,),
         text = element_text(family = "serif"))+
   scale_fill_manual(values = colorPalette, name = 'Mechanical Ventilation Status')
+
+
+ggplot(plotData, aes(x=AAGAB, fill = icu_status))+
+  geom_density(binwidth = 3, alpha = 0.5)+ #not fully opaque to allow vis
+  labs(title = 'Expression of AAGAB Stratified by ICU Status', 
+       x = 'Expression of AAGAB', 
+       y = 'Frequency')+
+  theme_light()+
+  theme(plot.title = element_text(hjust=0.5,),
+        text = element_text(family = "serif"))+
+  #colouring the curves based on mechanical vent status
+  scale_fill_manual(values = colorPalette, name = 'ICU Status')
+
+ggplot(plotData, aes(x=AAGAB, fill = sex))+
+  geom_density(binwidth = 3, alpha = 0.5)+ #not fully opaque to allow vis
+  labs(title = 'Expression of AAGAB Stratified by Sex', 
+       x = 'Expression of AAGAB', 
+       y = 'Frequency')+
+  theme_light()+
+  theme(plot.title = element_text(hjust=0.5,),
+        text = element_text(family = "serif"))+
+  #colouring the curves based on mechanical vent status
+  scale_fill_manual(values = colorPalette, name = 'Sex')
 
 ```
 
