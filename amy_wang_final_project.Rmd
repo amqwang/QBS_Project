@@ -38,14 +38,24 @@ working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB a
 
 new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
 final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
-#print(head(final_comp))
+
+
+final_comp$mechanical_ventilation <- replace(final_comp$mechanical_ventilation, final_comp$mechanical_ventilation == ' yes', 'Yes')
+final_comp$mechanical_ventilation <- replace(final_comp$mechanical_ventilation, final_comp$mechanical_ventilation == ' no', 'No')
+
+final_comp$icu_status <- replace(final_comp$icu_status, final_comp$icu_status == ' yes', 'Yes')
+final_comp$icu_status <- replace(final_comp$icu_status, final_comp$icu_status == ' no', 'No')
+
+final_comp$sex <- replace(final_comp$sex, final_comp$sex == ' female', 'Female')
+final_comp$sex <- replace(final_comp$sex, final_comp$sex == ' male', 'Male')
+print(head(final_comp))
 
 ```
 
 ```{r}
 #-----------------------SEPARATING BY CAT VARIABLE------------------------
-ventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' yes', ])
-nonventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' no', ])
+ventData <- data.frame(final_comp[final_comp$mechanical_ventilation == 'Yes', ])
+nonventData <- data.frame(final_comp[final_comp$mechanical_ventilation == 'No', ])
 
 #-------------------GETTING INDEX NUMBERS FOR CONT VARIABLES----------------------
 contVars <- c('age', 'lactate.mmol.l.', 'fibrinogen')
@@ -95,6 +105,11 @@ for (index in contVarsIndex){
 #-----------------PART 1: VALUES FOR CONT VAR FOR VENTILATED PATIENTS--------------
 
 #lactate non uniformly distributed
+ventData$lactate.mmol.l. <- as.double(ventData$lactate.mmol.l.)
+ventData$age <- as.double(ventData$age)
+ventData$fibrinogen <- as.double(ventData$fibrinogen)
+
+
 
 medVar <- median(ventData$lactate.mmol.l., na.rm = TRUE)
 # Quartile values
@@ -120,13 +135,16 @@ print(paste('Mean (sd) of age in ventilated patients: ',round(mean(ventData$age)
 print(paste('Mean (sd) of fibrinogen in ventilated patients: ',round(mean(ventData$fibrinogen, na.rm=TRUE),digits = 2),' (',
              round(sd(ventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
 
-head(nonventData)
 
 ```
 
 
 ```{r}
 #-----------------PART 1: VALUES FOR CONT VAR FOR NONVENTILATED PATIENTS--------------
+
+nonventData$lactate.mmol.l. <- as.double(nonventData$lactate.mmol.l.)
+nonventData$age <- as.double(nonventData$age)
+nonventData$fibrinogen <- as.double(nonventData$fibrinogen)
 
 #lactate non uniformly distributed
 nonventData$lactate.mmol.l. <- as.double(nonventData$lactate.mmol.l.)
@@ -180,32 +198,7 @@ data.frame('n' = c(table(nonventData$icu_status)),
 
 
 ```{r}
-#-----------------extra table1 code
-
-# #factoring categorical data
-# table1Data$final_comp.sex <- 
-#   factor(table1Data$final_comp.sex, 
-#          #levels=c(male, female, unknown),
-#          labels=c("Male", # Reference
-#                   "Female", 
-#                   "Unk"))
-
-
-# table1Data$Sex <- 
-#   factor(table1Data$Sex, 
-#          levels=c('female','male', missing),
-#          labels=c("Female", # Reference
-#                   "Male",
-#                   "Missing"))
-
-```
-
-
-
-
-
-```{r}
-#+++++++++++++++++++trying table1 package
+#------------------------GENERATING TABLE 1-----------------------------
 #https://einsteinmed.edu/uploadedfiles/centers/ictr/new/p3-r4-table-1-package-in-r.pdf
 #https://cran.r-project.org/web/packages/table1/vignettes/table1-examples.html
 
@@ -223,28 +216,18 @@ table1Data$Age <- as.numeric(table1Data$Age)
 table1Data$Fibrinogen <- as.numeric(table1Data$Fibrinogen)
 
 
-
 table1Data$mech_vent <- 
   factor(table1Data$mech_vent, 
-         levels=c(' no',' yes'),
+         levels=c('No','Yes'),
          labels=c("No Mechanical Ventilation", # Reference
                   "Mechanical Ventilation"))
 
 table1Data$icu_status <- 
   factor(table1Data$icu, 
-         levels=c(' no',' yes'),
+         levels=c('No','Yes'),
          labels=c("No ICU stay", # Reference
                   "ICU"))
 
-
-rndr <- function(x, name,...) {
-  if (!is.double(x)) return(render.categorical.default(x))
-  what <- switch(name,
-    Lactate = "Mean (SD)")
-    #Age = "Mean (SD)",
-    #Fibrinogen = "Mean (SD)")
-  parse.abbrev.render.code(c("", what))(x)
-}
 
 #https://stackoverflow.com/questions/73965608/remove-the-mean-row-from-table1-function-in-r
 #https://github.com/benjaminrich/table1/issues/126
@@ -262,66 +245,7 @@ table1(~ table1Data$Age+
          table1Data$Sex+
          table1Data$icu_status| table1Data$mech_vent, data=table1Data, render.continuous=c(.="Median [Q1 &ndash; Q3]"))
 
-print(is.double(table1Data$Lactate))
 
-```
-
-
-
-
-```{r}
-library(table1)
-# opp2$SEX <- 
-#   factor(opp2$SEX, levels=c(1,2),
-#          labels=c("Male", "Female"))
-# opp2$REGION <-
-#   factor(opp2$REGION, levels=c(1:5),
-#          labels = c("Northeast", "North Central", "South", "West", "Unknown"))
-# opp2$GS <- factor(opp2$GS, levels = c(1:5),
-#                   labels = c("Male", "Female", 
-#                              "Transmasculine", "Transfeminine", "Unknown"))
-# 
-
-
-labels <- list(variables=list(SEX="Sex",
-                              AGE="Age",
-                              LACTATE="Lactate"),
-               groups=list("", "Cis", "TGM"))
-strata <- c(list(Total=labelsopp2), split(opp2, opp2$GS))
-
-
-my.render.cont <- function(x) {
-  with(stats.apply.rounding(stats.default(x), digits=2), 
-       c("",
-         "Median (IQR)"=sprintf("%s (&plusmn; %s)", MEDIAN, IQR)))
-}
-my.render.cat <- function(x) {
-  c("", sapply(stats.default(x), 
-               function(y) with(y, sprintf("%d (%0.0f %%)", FREQ, PCT))))
-}
-
-table1(strata, labels, groupspan=c(1,2, 3),
-       render.continuous=my.render.cont, render.categorical=my.render.cat)`
-```
-
-
-```{r}
-#----------------------tableone
-#https://cran.r-project.org/web/packages/tableone/vignettes/introduction.html
-
-#head(table1Data)
-allVar <- c('Age','Sex','Lactate','Fibrinogen','icu_status','mech_vent')
-
-
-## Vector of categorical variables that need transformation
-catVar <- c('Sex','icu_status','mech_vent')
-
-## Create a TableOne object
-tab1 <- CreateTableOne(vars = allVar, 
-                       strata = 'mech_vent', data = table1Data, factorVars = catVar)
-nonUniform <- c('Lactate')
-print(tab1, nonnormal = nonUniform)#, formatOptions = list(big.mark = ","))
-summary(tab1)
 ```
 
 
@@ -332,10 +256,11 @@ working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB a
 print(head(working_genes))
 
 ggplot(working_genes, aes(x=AAGAB))+
-  geom_histogram(binwidth = 5, boundary = 0)+ #boundary at 0 to group data
+  geom_histogram(binwidth = 2, boundary = 0)+ #boundary at 0 to group data
   labs(title = 'Distribution of AAGAB', x = 'Expression of AAGAB', y = 'Frequency')+
   theme_light()+
-  theme(plot.title = element_text(hjust=0.5))
+  theme(plot.title = element_text(hjust=0.5),
+        text = element_text(family = "serif")) #changing the font
 
 new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
 final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
@@ -348,29 +273,22 @@ final_comp$age<- as.numeric(final_comp$age) #converting the age column from char
 #--------------------------PART 2: SCATTERPLOT OF AAGAB--------------------------
 ggplot(final_comp, aes(x= age, y=AAGAB))+
   geom_point()+ #two age unknowns from the data
-  labs(title = 'Age compared to distribution of gene AAGAB', 
+  labs(title = 'Age Compared to Distribution of Gene AAGAB', 
        x = 'Age (years)', y = 'Expression of AAGAB')+
   scale_x_continuous(breaks=seq(0,150,by=10))+
   theme_light()+
-  theme(plot.title = element_text(hjust=0.5))
+  theme(plot.title = element_text(hjust=0.5),
+         text = element_text(family = "serif"))
 
-
-box_first <- dplyr::select(final_comp,AAGAB, sex, mechanical_ventilation) #selecting data columns for easier viewing
-#print(box_first)
 
 #----------------------------PART 2: BOXPLOT OF AAGAB--------------------------
-
-box_long <- box_first %>% #pivoting long to prep for boxplot
-  tidyr::pivot_longer(cols= c(sex, mechanical_ventilation), 
-                      names_to = 'categorical', values_to = 'Sex/MechVent')
-head(box_long)
-
-ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
+ggplot(final_comp, aes (sex, AAGAB, fill = mechanical_ventilation))+
   geom_boxplot()+
   theme_light()+
   labs(title = 'Distribution of AAGAB Based on Sex Coloured by Mechanical Ventilation', 
        x = 'Sex', y = 'Expression of AAGAB')+
-  theme(plot.title = element_text(hjust=0))+
+  theme(plot.title = element_text(hjust=0),
+        text = element_text(family = "serif"))+
   scale_fill_discrete(name = 'Mechanical Ventilation Status')+
   scale_x_discrete(labels = c('Female', 'Male', 'Unknown'))
 ```
@@ -379,19 +297,11 @@ ggplot(box_first, aes (sex, AAGAB, fill = mechanical_ventilation))+
 ```{r}
 #------------------------------PART 3: HEATMAP
 
-# #generating variance values
-# geneVariance <- apply(final_comp, MARGIN = 2, FUN = var, )
-# 
-# #ordering rows of genes in order of decreasing variance
-# geneVariance <- final_comp[order(geneVariance,decreasing = T),]
-
-
-# Define covariates for tracking bar
-
-annotationData <- data.frame(sex = final_comp$sex,icu_status = final_comp$icu_status)
-unique(annotationData$icu_status)
+annotationData <- data.frame(Sex = final_comp$sex,'ICU Status' = final_comp$icu_status)
 
 rownames(annotationData) <- rownames(final_comp)
+
+
 
 annotationColors <- list(sex= c(' male' = 'aquamarine4',
                                    ' female' = 'purple4',
@@ -406,17 +316,24 @@ pheatmap(f2,
          show_rownames = F,
          cluster_rows = T,
          cluster_cols = T,
+         clustering_distance_cols = 'euclidean',
+         clustering_distance_rows = 'euclidean',
          annotation_row = annotationData,
-         annotation_colors = annotationColors)
+         annotation_colors = annotationColors,
+         main = 'Heatmap',
+         #legend = TRUE,
+         legend_labels = c('ICU Status','Sex'),
+         annotation_legend = T)
+
+#https://stackoverflow.com/questions/36852101/r-legend-title-or-units-when-using-pheatmap
 
 
 ```
+
+
+
 ```{r}
-head(table1)
-
-
-
-
+#---------------PART 3: NEW PLOT TYPE-------------------------------
 plotData <- data.frame(final_comp['AAGAB'], final_comp['mechanical_ventilation'])
 
 nonventPlot <- data.frame(plotData[plotData$mechanical_ventilation == ' no', ])
@@ -451,5 +368,4 @@ References
 https://stats.stackexchange.com/questions/280589/how-to-effectively-visualize-multiple-frequency-polygons-in-ggplot2
 
 
-Overmyer, K. A., Shishkova, E., Miller, I. J., Balnis, J., Bernstein, M. N., Peters-Clarke, T. M., Meyer, J. G., Quan, Q., Muehlbauer, L. K., Trujillo, E. A., He, Y., Chopra, A., Chieng, H. C., Tiwari, A., Judson, M. A., Paulson, B., Brademan, D. R., Zhu, Y., Serrano, L. R., … Jaitovich, A. (2021). Large-Scale Multi-omic Analysis of COVID-19 Severity. Cell Systems, 12(1), 23-40.e7. https://doi.org/10.1016/j.cels.2020.10.003
 
