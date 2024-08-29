@@ -13,8 +13,6 @@ library(rlang)
 library(corrplot)
 install.packages("table1")
 library(table1)
-# install.packages(tableone)
-# library(tableone)
 ```
 
 ```{r}
@@ -27,35 +25,22 @@ setwd("/Users/amyw/Documents/QBS103/DSProject")
 for (file in datafiles){
   the_file <- read.csv(file)
 }
-  
-setwd("/Users/amyw/Documents/QBS103/DSProject")
 
 gene_df <- read.csv('QBS103_GSE157103_genes.csv', header = TRUE,row.names = 1)
 meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE, row.names = 1)
 
 working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
-#print(head(working_genes))
 
 new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
 final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
-
-
-final_comp$mechanical_ventilation <- replace(final_comp$mechanical_ventilation, final_comp$mechanical_ventilation == ' yes', 'Yes')
-final_comp$mechanical_ventilation <- replace(final_comp$mechanical_ventilation, final_comp$mechanical_ventilation == ' no', 'No')
-
-final_comp$icu_status <- replace(final_comp$icu_status, final_comp$icu_status == ' yes', 'Yes')
-final_comp$icu_status <- replace(final_comp$icu_status, final_comp$icu_status == ' no', 'No')
-
-final_comp$sex <- replace(final_comp$sex, final_comp$sex == ' female', 'Female')
-final_comp$sex <- replace(final_comp$sex, final_comp$sex == ' male', 'Male')
-print(head(final_comp))
 
 ```
 
 ```{r}
 #-----------------------SEPARATING BY CAT VARIABLE------------------------
-ventData <- data.frame(final_comp[final_comp$mechanical_ventilation == 'Yes', ])
-nonventData <- data.frame(final_comp[final_comp$mechanical_ventilation == 'No', ])
+ventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' yes', ])
+nonventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' no', ])
+ head(ventData)
 
 #-------------------GETTING INDEX NUMBERS FOR CONT VARIABLES----------------------
 contVars <- c('age', 'lactate.mmol.l.', 'fibrinogen')
@@ -70,7 +55,6 @@ for (i in 1:length(final_comp)) {
 }
 contVarsIndex = c(110, 122, 123)
 
-
 #-----------------------------CHECKING DISTRIBUTION--------------------
 for (index in contVarsIndex){
   #checking distribution
@@ -78,16 +62,13 @@ for (index in contVarsIndex){
   
   if (colnames(final_comp[index]) == 'age'){
     xAxis <- 'Age'
-    # print(xAxis)
   }
 
   else if (colnames(final_comp[index]) == 'lactate.mmol.l.'){
     xAxis <- 'Lactate (mmol/l)'
-    # print(xAxis)
   }
-  else {#(colnames(final_comp[index]) == 'fibrinogen'){
+  else {
     xAxis <- 'Fibrinogen'
-    # print(xAxis)
   }
 
   final_comp[[index]]<- as.numeric(final_comp[[index]])
@@ -102,7 +83,7 @@ for (index in contVarsIndex){
 ```
 
 ```{r}
-#-----------------PART 1: VALUES FOR CONT VAR FOR VENTILATED PATIENTS--------------
+#-----------------PART 1: CHECKING VALUES FOR CONT VAR FOR VENTILATED PATIENTS--------------
 
 #lactate non uniformly distributed
 ventData$lactate.mmol.l. <- as.double(ventData$lactate.mmol.l.)
@@ -110,10 +91,9 @@ ventData$age <- as.double(ventData$age)
 ventData$fibrinogen <- as.double(ventData$fibrinogen)
 
 
-
 medVar <- median(ventData$lactate.mmol.l., na.rm = TRUE)
 # Quartile values
-quantileVar <- quantile(ventData[122], na.rm = TRUE)
+quantileVar <- quantile(ventData$lactate.mmol.l., na.rm = TRUE)
   
 # IQR (Q3 - Q1)
 IQRVar <- IQR(ventData$lactate.mmol.l., na.rm = TRUE)
@@ -140,7 +120,7 @@ print(paste('Mean (sd) of fibrinogen in ventilated patients: ',round(mean(ventDa
 
 
 ```{r}
-#-----------------PART 1: VALUES FOR CONT VAR FOR NONVENTILATED PATIENTS--------------
+#-----------------PART 1: CHECKING VALUES FOR CONT VAR FOR NONVENTILATED PATIENTS--------------
 
 nonventData$lactate.mmol.l. <- as.double(nonventData$lactate.mmol.l.)
 nonventData$age <- as.double(nonventData$age)
@@ -179,7 +159,7 @@ print(paste('Mean (sd) of fibrinogen in non-ventilated patients: ',round(mean(no
 ```
 
 ```{r}
-#-------------------PART 1: CATEGORICAL DATA---------------------------------
+#-------------------PART 1: CHECKING CATEGORICAL DATA---------------------------------
 data.frame('n' = c(table(ventData$sex)),
           'percent' = c(round(table(ventData$sex)/(length(ventData$sex))*100,digits = 2)))
 
@@ -209,22 +189,18 @@ table1Data <- data.frame(final_comp$mechanical_ventilation, #stratifying
                          final_comp$fibrinogen,
                          final_comp$sex, #categorical
                          final_comp$icu_status) #categorical
-head(table1Data)
-colnames(table1Data) = c('mech_vent', 'Lactate','Age','Fibrinogen','Sex','icu_status')
-table1Data$Lactate <- as.numeric(table1Data$Lactate)
-table1Data$Age <- as.numeric(table1Data$Age)
-table1Data$Fibrinogen <- as.numeric(table1Data$Fibrinogen)
 
+colnames(table1Data) = c('mech_vent', 'Lactate','Age','Fibrinogen','Sex','icu_status')
 
 table1Data$mech_vent <- 
   factor(table1Data$mech_vent, 
-         levels=c('No','Yes'),
+         levels=c(' no',' yes'),
          labels=c("No Mechanical Ventilation", # Reference
                   "Mechanical Ventilation"))
 
 table1Data$icu_status <- 
   factor(table1Data$icu, 
-         levels=c('No','Yes'),
+         levels=c(' no',' yes'),
          labels=c("No ICU stay", # Reference
                   "ICU"))
 
@@ -238,6 +214,8 @@ label(table1Data$Lactate) <- "Lactate (mmol/l)"
 label(table1Data$Fibrinogen) <- "Fibrinogen"
 label(table1Data$Sex) <- "Sex"
 label(table1Data$icu_status) <- "ICU Status"
+
+head(table1Data)
 
 table1(~ table1Data$Age+ 
          table1Data$Lactate+ 
@@ -272,16 +250,20 @@ final_comp$age<- as.numeric(final_comp$age) #converting the age column from char
 
 #--------------------------PART 2: SCATTERPLOT OF AAGAB--------------------------
 ggplot(final_comp, aes(x= age, y=AAGAB))+
-  geom_point()+ #two age unknowns from the data
+  geom_point(alpha = 0.5, size = 3)+ #two age unknowns from the data
   labs(title = 'Age Compared to Distribution of Gene AAGAB', 
        x = 'Age (years)', y = 'Expression of AAGAB')+
   scale_x_continuous(breaks=seq(0,150,by=10))+
   theme_light()+
+  geom_smooth()+
   theme(plot.title = element_text(hjust=0.5),
          text = element_text(family = "serif"))
 
 
 #----------------------------PART 2: BOXPLOT OF AAGAB--------------------------
+
+colorPalette<-wesanderson::wes_palette('AsteroidCity1')
+
 ggplot(final_comp, aes (sex, AAGAB, fill = mechanical_ventilation))+
   geom_boxplot()+
   theme_light()+
@@ -289,83 +271,99 @@ ggplot(final_comp, aes (sex, AAGAB, fill = mechanical_ventilation))+
        x = 'Sex', y = 'Expression of AAGAB')+
   theme(plot.title = element_text(hjust=0),
         text = element_text(family = "serif"))+
-  scale_fill_discrete(name = 'Mechanical Ventilation Status')+
+  scale_fill_manual(values = colorPalette, name = 'Mechanical Ventilation Status')+
   scale_x_discrete(labels = c('Female', 'Male', 'Unknown'))
 ```
 
 
 ```{r}
 #------------------------------PART 3: HEATMAP
-
 annotationData <- data.frame(Sex = final_comp$sex,'ICU Status' = final_comp$icu_status)
 
+#changing the values in the dataframe so the resulting heatmap is clean
+annotationData$Sex <- replace(annotationData$Sex, annotationData$Sex == ' female', 'Female')
+annotationData$Sex <- replace(annotationData$Sex, annotationData$Sex == ' male', 'Male')
+annotationData$Sex <- replace(annotationData$Sex, annotationData$Sex == ' unknown', 'Unknown')
+
+annotationData$ICU.Status <- replace(annotationData$ICU.Status, annotationData$ICU.Status == ' yes', 'Yes')
+annotationData$ICU.Status <- replace(annotationData$ICU.Status, annotationData$ICU.Status == ' no', 'No') 
+
+#equating the row names between the two databases to allow for annotating
 rownames(annotationData) <- rownames(final_comp)
 
+#redefining the colours for annotation to fit colour scheme
+annotationColors <- list(Sex= c('Male' = '#E54E21',
+                                'Female' = "#6C8645",
+                                'Unknown' = '#C18748'),
+                         ICU.Status = c('Yes' = "#0A9F9D",
+                                        'No' = "#C52E19"))
 
+#arbitrarily selecting variety of genes
+f2 <-data.frame(final_comp['AAGAB'], 
+                final_comp['ABCC5'],
+                final_comp['AAK1'],
+                final_comp['AARS1'],
+                final_comp['AARSD1'],
+                final_comp['ABCA1'],
+                final_comp['ABCB10'],
+                final_comp['ABHD13'],
+                final_comp['ABHD17A'],
+                final_comp['ABCC3'],
+                final_comp['ABCF3'],
+                final_comp['ABCE1'],
+                final_comp['ABCF2'],
+                final_comp['ABHD12']
+                )
 
-annotationColors <- list(sex= c(' male' = 'aquamarine4',
-                                   ' female' = 'purple4',
-                                   ' unknown' = 'red'),
-                            icu_status = c(' yes' = 'yellow',
-                                           ' no' = 'pink'))
-
-f2 <-data.frame(final_comp[,15:25])
+##equating the row names between the two databases to allow for creation of heatmap
 rownames(f2) = rownames(final_comp)
-# Generate heatmap
+
+#generate heatmap
 pheatmap(f2,
-         show_rownames = F,
+         show_rownames = F, #do not want all the sample names
          cluster_rows = T,
          cluster_cols = T,
          clustering_distance_cols = 'euclidean',
          clustering_distance_rows = 'euclidean',
          annotation_row = annotationData,
          annotation_colors = annotationColors,
-         main = 'Heatmap',
-         #legend = TRUE,
-         legend_labels = c('ICU Status','Sex'),
-         annotation_legend = T)
-
-#https://stackoverflow.com/questions/36852101/r-legend-title-or-units-when-using-pheatmap
-
+         main = 'Heatmap of Gene Expression in Samples')
 
 ```
+
+
 
 
 
 ```{r}
 #---------------PART 3: NEW PLOT TYPE-------------------------------
-plotData <- data.frame(final_comp['AAGAB'], final_comp['mechanical_ventilation'])
+plotData <- data.frame(final_comp['AAGAB'], final_comp['mechanical_ventilation'], final_comp['ABHD10'])
 
-nonventPlot <- data.frame(plotData[plotData$mechanical_ventilation == ' no', ])
-ventPlot <- data.frame(plotData[plotData$mechanical_ventilation == ' yes', ])
+colorPalette<-wesanderson::wes_palette('AsteroidCity1')
 
-head(plotData)
-
-
-#, binwidth = 5, boundary = 0
-ggplot()+
-  geom_freqpoly(data= nonventData, mapping = aes(x=AAGAB), colour = 'red', binwidth = 5, boundary = 0)+
-  geom_freqpoly(ventData, mapping = aes(x=AAGAB), colour = 'blue', binwidth = 5, boundary = 0)+#boundary at 0 to group data
-  labs(title = 'Distribution of AAGAB Based on Mechanical Ventilation Status', x = 'Expression of AAGAB', y = 'Frequency')+
+ggplot(plotData, aes(x=AAGAB, fill = mechanical_ventilation))+
+  geom_density(binwidth = 3, alpha = 0.5)+
+  labs(title = 'Expression of AAGAB Stratified by Mechanical Ventilation Status', 
+       x = 'Expression of AAGAB', 
+       y = 'Frequency')+
   theme_light()+
-  theme(plot.title = element_text(hjust=0.5))
+  theme(plot.title = element_text(hjust=0.5,),
+        text = element_text(family = "serif"))+
+  scale_fill_manual(values = colorPalette, name = 'Mechanical Ventilation Status')
+
+
+
+ggplot(plotData, aes(x=ABHD10, fill = mechanical_ventilation))+
+  geom_density(binwidth = 3, alpha = 0.5)+
+  labs(title = 'Expression of ABHD10 Stratified by Mechanical Ventilation Status', 
+       x = 'Expression of ABHD10', 
+       y = 'Frequency')+
+  theme_light()+
+  theme(plot.title = element_text(hjust=0.5,),
+        text = element_text(family = "serif"))+
+  scale_fill_manual(values = colorPalette, name = 'Mechanical Ventilation Status')
 
 ```
-Introduction
-With the spread of COVID-19, there were few studies that examined that molecular-level response to the COVID-19 virus. The study "Large-Scale Multi-omic Analysis of COVID-19 Severity" applied RNA-seq and high resolution mass spectrometry on 128 blood samples from COVID positive and negative patients. The objective of this study was to assess the key molecular markers of the  COVID-19 response, associate these markers with clinical metadata and outcome, and generate new hypotheses.
-Blood samples were collected from these 128 patients with moderate to severe respiratory issues between April 6, 2020 and May 1, 2020 from Albany Medical Center in Albany, NY. There were 219 molecular features identified that were significant to COVID status, many that were important in various disease processes related to COVID-19.
-For the analysis pertaining to this report, the gene AAGAB was studied. AAGAB, or alpha and gamma adaptin binding protein, is a protein coding gene in humans that encodes for proteins that interact with "subunits of complexes involved in clathrin-coated vesicle tracking". AAGAB is expressed throughout the body in the thyroid, colon, and 25 other tissues.  
-
-Methods
-Data source, methods for data collection and analysis can be found in the study (CITE).Blood samples were collected from these 128 patients with moderate to severe respiratory issues between April 6, 2020 and May 1, 2020 from Albany Medical Center in Albany, NY. There were 219 molecular features identified that were significant to COVID status, many that were important in various disease processes related to COVID-19. 
-
-For the purposes of this report, R version 4.2 was used in conjunction with the pheatmap, tidyverse, dplyr, ggplot2, rlang, corrplot, and table1 packages to analyze and visualize the data and relationship between variables. The clustering algorithm used to (FINISH)  
-
-Results
-difference in plots: ABI1, ABHD5
-
-References
-https://stats.stackexchange.com/questions/280589/how-to-effectively-visualize-multiple-frequency-polygons-in-ggplot2
 
 
 
