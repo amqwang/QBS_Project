@@ -40,7 +40,6 @@ final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the
 #-----------------------SEPARATING BY CAT VARIABLE------------------------
 ventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' yes', ])
 nonventData <- data.frame(final_comp[final_comp$mechanical_ventilation == ' no', ])
- head(ventData)
 
 #-------------------GETTING INDEX NUMBERS FOR CONT VARIABLES----------------------
 contVars <- c('age', 'lactate.mmol.l.', 'fibrinogen')
@@ -73,6 +72,7 @@ for (index in contVarsIndex){
 
   final_comp[[index]]<- as.numeric(final_comp[[index]])
   
+  #plotting histograms for each continuous variable to check uniform/non-uniform distribution
   plot<- ggplot(data = final_comp,aes(x = final_comp[[index]])) +
                 geom_histogram() + 
                 labs(x = xAxis, y = 'Frequency') +
@@ -84,6 +84,7 @@ for (index in contVarsIndex){
 
 ```{r}
 #-----------------PART 1: CHECKING VALUES FOR CONT VAR FOR VENTILATED PATIENTS--------------
+#double checking my values with the table1 function
 
 #lactate non uniformly distributed
 ventData$lactate.mmol.l. <- as.double(ventData$lactate.mmol.l.)
@@ -153,8 +154,7 @@ nonventData$fibrinogen <- as.double(nonventData$fibrinogen)
 print(paste('Mean (sd) of age in non-ventilated patients: ',round(mean(nonventData$age, na.rm=TRUE),digits = 2),' (',
              round(sd(nonventData$age, na.rm=TRUE),digits = 2),')'))
 
-print(paste('Mean (sd) of fibrinogen in non-ventilated patients: ',round(mean(nonventData$fibrinogen, na.rm=TRUE),digits = 2),' (',
-             round(sd(nonventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
+print(paste('Mean (sd) of fibrinogen in non-ventilated patients: ',round(mean(nonventData$fibrinogen, na.rm=TRUE),digits = 2),' (', round(sd(nonventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
 
 ```
 
@@ -190,8 +190,17 @@ table1Data <- data.frame(final_comp$mechanical_ventilation, #stratifying
                          final_comp$sex, #categorical
                          final_comp$icu_status) #categorical
 
+
+
+#renaming the column names so the table1 output will look nice
 colnames(table1Data) = c('mech_vent', 'Lactate','Age','Fibrinogen','Sex','icu_status')
 
+#have to change data type because otherwise numeric columns appear as chr
+table1Data$Lactate <- as.double(table1Data$Lactate)
+table1Data$Fibrinogen <- as.double(table1Data$Fibrinogen)
+
+
+#renaming some of the values for nice output
 table1Data$mech_vent <- 
   factor(table1Data$mech_vent, 
          levels=c(' no',' yes'),
@@ -211,12 +220,14 @@ table1Data$icu_status <-
 
 label(table1Data$Age) <- "Age (years)"
 label(table1Data$Lactate) <- "Lactate (mmol/l)"
-label(table1Data$Fibrinogen) <- "Fibrinogen"
+label(table1Data$Fibrinogen) <- "Fibrinogen (mg/dL)"
 label(table1Data$Sex) <- "Sex"
 label(table1Data$icu_status) <- "ICU Status"
 
 head(table1Data)
 
+#creating table 1 stratified by mech_vent
+#rendering all continuous data by median and IQR
 table1(~ table1Data$Age+ 
          table1Data$Lactate+ 
          table1Data$Fibrinogen+
@@ -231,7 +242,6 @@ table1(~ table1Data$Age+
 #----------------------------PART 2: HISTOGRAM OF AAGAB--------------------------
 #plotting histogram of AAGAB
 working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
-print(head(working_genes))
 
 ggplot(working_genes, aes(x=AAGAB))+
   geom_histogram(binwidth = 2, boundary = 0)+ #boundary at 0 to group data
@@ -242,20 +252,20 @@ ggplot(working_genes, aes(x=AAGAB))+
 
 new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
 final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
-print(head(final_comp))
-
 
 final_comp$age<- as.numeric(final_comp$age) #converting the age column from characters to numerics
 
 
 #--------------------------PART 2: SCATTERPLOT OF AAGAB--------------------------
 ggplot(final_comp, aes(x= age, y=AAGAB))+
+  #making alpha 0.5, meaning the dots are not fully opaque
+  #This allows overlapping datapoints to show up darker than the others
   geom_point(alpha = 0.5, size = 3)+ #two age unknowns from the data
   labs(title = 'Age Compared to Distribution of Gene AAGAB', 
        x = 'Age (years)', y = 'Expression of AAGAB')+
   scale_x_continuous(breaks=seq(0,150,by=10))+
   theme_light()+
-  geom_smooth()+
+  geom_smooth()+ #adding trend line 
   theme(plot.title = element_text(hjust=0.5),
          text = element_text(family = "serif"))
 
@@ -321,12 +331,12 @@ rownames(f2) = rownames(final_comp)
 #generate heatmap
 pheatmap(f2,
          show_rownames = F, #do not want all the sample names
-         cluster_rows = T,
+         cluster_rows = T, #clustering both rows and columns
          cluster_cols = T,
-         clustering_distance_cols = 'euclidean',
+         clustering_distance_cols = 'euclidean', #choosing default, euclidean
          clustering_distance_rows = 'euclidean',
-         annotation_row = annotationData,
-         annotation_colors = annotationColors,
+         annotation_row = annotationData, #annotating the rows based on our dataframe
+         annotation_colors = annotationColors, #using the specified colour scheme
          main = 'Heatmap of Gene Expression in Samples')
 
 ```
@@ -342,13 +352,14 @@ plotData <- data.frame(final_comp['AAGAB'], final_comp['mechanical_ventilation']
 colorPalette<-wesanderson::wes_palette('AsteroidCity1')
 
 ggplot(plotData, aes(x=AAGAB, fill = mechanical_ventilation))+
-  geom_density(binwidth = 3, alpha = 0.5)+
+  geom_density(binwidth = 3, alpha = 0.5)+ #not fully opaque to allow vis
   labs(title = 'Expression of AAGAB Stratified by Mechanical Ventilation Status', 
        x = 'Expression of AAGAB', 
        y = 'Frequency')+
   theme_light()+
   theme(plot.title = element_text(hjust=0.5,),
         text = element_text(family = "serif"))+
+  #colouring the curves based on mechanical vent status
   scale_fill_manual(values = colorPalette, name = 'Mechanical Ventilation Status')
 
 
