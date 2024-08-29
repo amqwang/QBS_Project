@@ -11,7 +11,7 @@ library(dplyr)
 library(ggplot2)
 library(rlang)
 library(corrplot)
-install.packages("table1")
+#install.packages("table1")
 library(table1)
 ```
 
@@ -31,8 +31,10 @@ meta_df <- read.csv('QBS103_GSE157103_series_matrix.csv', header = TRUE, row.nam
 
 working_genes <- as.data.frame(t(gene_df)) #pivoting dataframe to select AAGAB as a column
 
-new_comp <- merge(working_genes, meta_df, by = 'row.names') #merging the two dataframes using the row names
-final_comp <- data.frame(new_comp, row.names = 1) #renaming the row names as the participant ID
+new_comp <- merge(working_genes, meta_df, by = 'row.names') 
+#merging the two dataframes using the row names
+final_comp <- data.frame(new_comp, row.names = 1) 
+#renaming the row names as the participant ID
 
 ```
 
@@ -104,16 +106,19 @@ lowerQua <- quantile(ventData$lactate.mmol.l., 1/4, na.rm = TRUE)
 higherQua <- quantile(ventData$lactate.mmol.l., 3/4, na.rm = TRUE)
   
 #print median and IQR statement
-print(paste('Median [IQR] of lactate of age in ventilated patients:',round((medVar),digits = 2),
+print(paste('Median [IQR] of lactate of age in ventilated patients:',
+            round((medVar),digits = 2),
              '[',round((lowerQua), digits = 2), ',', round((higherQua), digits = 2),']'))
 
 
 #for age and fibrinogen which are uniformly distributed
-print(paste('Mean (sd) of age in ventilated patients: ',round(mean(ventData$age),digits = 2),' (',
+print(paste('Mean (sd) of age in ventilated patients: ',
+            round(mean(ventData$age),digits = 2),' (',
              round(sd(ventData$age),digits = 2),')'))
 
 
-print(paste('Mean (sd) of fibrinogen in ventilated patients: ',round(mean(ventData$fibrinogen, na.rm=TRUE),digits = 2),' (',
+print(paste('Mean (sd) of fibrinogen in ventilated patients: ',
+            round(mean(ventData$fibrinogen, na.rm=TRUE),digits = 2),' (',
              round(sd(ventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
 
 
@@ -151,10 +156,13 @@ nonventData$age <- as.double(nonventData$age)
 nonventData$fibrinogen <- as.double(nonventData$fibrinogen)
 
 
-print(paste('Mean (sd) of age in non-ventilated patients: ',round(mean(nonventData$age, na.rm=TRUE),digits = 2),' (',
+print(paste('Mean (sd) of age in non-ventilated patients: ',
+            round(mean(nonventData$age, na.rm=TRUE),digits = 2),' (',
              round(sd(nonventData$age, na.rm=TRUE),digits = 2),')'))
 
-print(paste('Mean (sd) of fibrinogen in non-ventilated patients: ',round(mean(nonventData$fibrinogen, na.rm=TRUE),digits = 2),' (', round(sd(nonventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
+print(paste('Mean (sd) of fibrinogen in non-ventilated patients: ',
+            round(mean(nonventData$fibrinogen, na.rm=TRUE),digits = 2),' 
+            (', round(sd(nonventData$fibrinogen, na.rm=TRUE),digits = 2),')'))
 
 ```
 
@@ -232,7 +240,8 @@ table1(~ table1Data$Age+
          table1Data$Lactate+ 
          table1Data$Fibrinogen+
          table1Data$Sex+
-         table1Data$icu_status| table1Data$mech_vent, data=table1Data, render.continuous=c(.="Median [Q1 &ndash; Q3]"))
+         table1Data$icu_status| table1Data$mech_vent, data=table1Data, 
+         render.continuous=c(.="Median [Q1 &ndash; Q3]"))
 
 
 ```
@@ -291,12 +300,17 @@ ggplot(final_comp, aes (sex, AAGAB, fill = mechanical_ventilation))+
 annotationData <- data.frame(Sex = final_comp$sex,'ICU Status' = final_comp$icu_status)
 
 #changing the values in the dataframe so the resulting heatmap is clean
-annotationData$Sex <- replace(annotationData$Sex, annotationData$Sex == ' female', 'Female')
-annotationData$Sex <- replace(annotationData$Sex, annotationData$Sex == ' male', 'Male')
-annotationData$Sex <- replace(annotationData$Sex, annotationData$Sex == ' unknown', 'Unknown')
+annotationData$Sex <- replace(annotationData$Sex, 
+                              annotationData$Sex == ' female', 'Female')
+annotationData$Sex <- replace(annotationData$Sex, 
+                              annotationData$Sex == ' male', 'Male')
+annotationData$Sex <- replace(annotationData$Sex, 
+                              annotationData$Sex == ' unknown', 'Unknown')
 
-annotationData$ICU.Status <- replace(annotationData$ICU.Status, annotationData$ICU.Status == ' yes', 'Yes')
-annotationData$ICU.Status <- replace(annotationData$ICU.Status, annotationData$ICU.Status == ' no', 'No') 
+annotationData$ICU.Status <- replace(annotationData$ICU.Status, 
+                                     annotationData$ICU.Status == ' yes', 'Yes')
+annotationData$ICU.Status <- replace(annotationData$ICU.Status, 
+                                     annotationData$ICU.Status == ' no', 'No') 
 
 #equating the row names between the two databases to allow for annotating
 rownames(annotationData) <- rownames(final_comp)
